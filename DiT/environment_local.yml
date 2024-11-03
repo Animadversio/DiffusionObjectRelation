@@ -1,0 +1,12 @@
+name: DiT
+channels:
+  - pytorch
+  - nvidia
+dependencies:
+  - python >= 3.8
+  - pytorch >= 1.13
+  - torchvision
+  - pip:
+    - timm
+    - diffusers
+    - accelerate
