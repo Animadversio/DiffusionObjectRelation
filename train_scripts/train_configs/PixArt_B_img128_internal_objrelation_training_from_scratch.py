@@ -12,6 +12,7 @@ window_block_indexes = []
 window_size=0
 use_rel_pos=False
 model = 'PixArt_B_2'
+model_max_length = 120
 fp32_attention = True
 load_from = None
 resume_from = dict(checkpoint=None, load_ema=False, resume_optimizer=True, resume_lr_scheduler=True)
