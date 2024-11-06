@@ -3,7 +3,7 @@
 #SBATCH -c 1                         # 1 CPU core
 #SBATCH --mem=16G                    # 16GB RAM
 #SBATCH -t 1:00:00                   # 1 hour
-#SBATCH --gres=gpu:teslaV100:1       # Request 1 Tesla V100 GPU
+#SBATCH --gres=gpu:rtx6000:1       # Request 1 Tesla V100 GPU
 #SBATCH --job-name="vscodetunnel"    
 
 # Load required modules
