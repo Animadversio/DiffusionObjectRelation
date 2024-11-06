@@ -4,7 +4,7 @@ data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Proje
 image_list_json = ['data_info.json',]
 
 data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRel_pilot2', 
-            image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=32)
+            image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
 # model setting
@@ -12,7 +12,7 @@ window_block_indexes = []
 window_size=0
 use_rel_pos=False
 model = 'PixArt_B_2'
-model_max_length = 32
+model_max_length = 20
 caption_channels = 4096
 fp32_attention = True
 load_from = None
@@ -38,6 +38,8 @@ lr_schedule_args = dict(num_warmup_steps=500)
 
 save_model_epochs = 50
 save_model_steps = 2000
-eval_sampling_steps = 100
+eval_sampling_steps = 250
 log_interval = 20
 work_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_pilot/output/debug'
+do_visualize_samples = True
+prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache"
