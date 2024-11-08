@@ -3,7 +3,7 @@ data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Proje
 
 image_list_json = ['data_info.json',]
 
-data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRel_pilot_rndemb', 
+data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRel_pilot_rndembposemb', 
             image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
@@ -44,4 +44,21 @@ eval_sampling_steps = 250
 log_interval = 20
 # work_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_pilot_rndemb/output/debug'
 do_visualize_samples = True
-prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_rndemb"
+prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/objectRel_pilot_rndembposemb"
+validation_prompts = [
+    "triangle is to the upper left of square", 
+    "blue triangle is to the upper left of red square", 
+    "triangle is above and to the right of square", 
+    "blue circle is above and to the right of blue square", 
+    "triangle is to the left of square", 
+    "triangle is to the left of triangle", 
+    "circle is below red square",
+    "red circle is to the left of blue square",
+    "blue square is to the right of red circle",
+    "red circle is above square",
+    "triangle is above red circle",
+    "red is above blue",
+    "red is to the left of red",
+    "blue triangle is above red triangle", 
+    "blue circle is above blue square", 
+]
