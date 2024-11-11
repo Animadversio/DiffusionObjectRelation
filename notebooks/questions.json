@@ -1,0 +1,144 @@
+{
+    "1": {
+        "question": "How many shapes are present in the image?",
+        "options": [
+            "A. 0",
+            "B. 1",
+            "C. 2",
+            "D. equal to or more than 3"
+        ],
+        "instructions": "\n Answer only in A, B, C or D.",
+        "reference_answer": "C",
+        "model_answer": "B",
+        "score": 0
+    },
+    "2": {
+        "question": "How many blobs are present in the image?",
+        "options": [
+            "A. 0",
+            "B. 1",
+            "C. 2",
+            "D. equal to or more than 3"
+        ],
+        "instructions": "\n Answer only in A, B, C or D.",
+        "reference_answer": "C",
+        "model_answer": "B",
+        "score": 0
+    },
+    "3": {
+        "question": "Are there exactly two distinct shapes in the image?",
+        "options": [
+            "A. Yes",
+            "B. No",
+            "C. Not sure"
+        ],
+        "instructions": "\n Answer only in A, B or C.",
+        "reference_answer": "A",
+        "model_answer": "B",
+        "score": 0
+    },
+    "4": {
+        "question": "What is the shape that is red in color?",
+        "options": [
+            "A. Circle",
+            "B. Square",
+            "C. Triangle",
+            "D. Unidentifiable",
+            "E. No red color shapes"
+        ],
+        "instructions": "\n Answer only in A, B, C, D or E.",
+        "reference_answer": "C",
+        "model_answer": "C",
+        "score": 1,
+        "condition": "shapes question cannot be 0"
+    },
+    "5": {
+        "question": "What is the shape that is blue in color?",
+        "options": [
+            "A. Circle",
+            "B. Square",
+            "C. Triangle",
+            "D. Unidentifiable",
+            "E. No blue color shapes"
+        ],
+        "instructions": "\n Answer only in A, B, C, D or E.",
+        "reference_answer": "B",
+        "model_answer": "B",
+        "score": 1,
+        "condition": "shapes question cannot be 0"
+    },
+    "6": {
+        "question": "What color is the square in the image?",
+        "options": [
+            "A. Red",
+            "B. Blue",
+            "C. Not red or blue",
+            "D. No square shape"
+        ],
+        "instructions": "\n Answer only in A, B, C or D.",
+        "reference_answer": "B",
+        "model_answer": "C",
+        "score": 0,
+        "condition": "shapes question cannot be 0"
+    },
+    "7": {
+        "question": "What color is the circle in the image?",
+        "options": [
+            "A. Red",
+            "B. Blue",
+            "C. Not red or blue",
+            "D. No circle shape"
+        ],
+        "instructions": "\n Answer only in A, B, C or D.",
+        "reference_answer": "D",
+        "model_answer": "C",
+        "score": 0,
+        "condition": "shapes question cannot be 0"
+    },
+    "8": {
+        "question": "What color is the triangle in the image?",
+        "options": [
+            "A. Red",
+            "B. Blue",
+            "C. Not red or blue",
+            "D. No triangle shape"
+        ],
+        "instructions": "\n Answer only in A, B, C or D.",
+        "reference_answer": "B",
+        "model_answer": "C",
+        "score": 0,
+        "condition": "shapes question cannot be 0"
+    },
+    "9": {
+        "question": "What's the spatial relationship between 2 blobs?",
+        "options": [
+            "A. Directly above vs. below",
+            "B. Directly left vs. right",
+            "C. Upper-left vs. Lower-right",
+            "D. Upper-right vs. Lower-left",
+            "E. Overlapping"
+        ],
+        "instructions": "\n Answer only in A, B, C, D or E.",
+        "reference_answer": "C",
+        "model_answer": "C",
+        "score": 1,
+        "condition": "shapes question = 2"
+    },
+    "10": {
+        "question": "Where is the red triangle relative to the square?",
+        "options": [
+            "A. Up and to the right",
+            "B. Up and to the left",
+            "C. Down and to the right",
+            "D. Down and to the left",
+            "E. Directly above",
+            "F. Directly below",
+            "G. Overlapping"
+        ],
+        "instructions": "\n Answer only in A, B, C, D, E, F or G.",
+        "reference_answer": "B",
+        "model_answer": "A",
+        "score": 0,
+        "condition": "correctly respond to above questions"
+    }
+}
