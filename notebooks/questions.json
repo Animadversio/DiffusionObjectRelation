@@ -47,9 +47,9 @@
             "E. No red color shapes"
         ],
         "instructions": "\n Answer only in A, B, C, D or E.",
-        "reference_answer": "C",
+        "reference_answer": "E",
         "model_answer": "C",
-        "score": 1,
+        "score": 0,
         "condition": "shapes question cannot be 0"
     },
     "5": {
@@ -62,9 +62,9 @@
             "E. No blue color shapes"
         ],
         "instructions": "\n Answer only in A, B, C, D or E.",
-        "reference_answer": "B",
+        "reference_answer": "A",
         "model_answer": "B",
-        "score": 1,
+        "score": 0,
         "condition": "shapes question cannot be 0"
     },
     "6": {
@@ -90,7 +90,7 @@
             "D. No circle shape"
         ],
         "instructions": "\n Answer only in A, B, C or D.",
-        "reference_answer": "D",
+        "reference_answer": "B",
         "model_answer": "C",
         "score": 0,
         "condition": "shapes question cannot be 0"
@@ -104,7 +104,7 @@
             "D. No triangle shape"
         ],
         "instructions": "\n Answer only in A, B, C or D.",
-        "reference_answer": "B",
+        "reference_answer": "D",
         "model_answer": "C",
         "score": 0,
         "condition": "shapes question cannot be 0"
@@ -119,13 +119,13 @@
             "E. Overlapping"
         ],
         "instructions": "\n Answer only in A, B, C, D or E.",
-        "reference_answer": "C",
+        "reference_answer": "D",
         "model_answer": "C",
-        "score": 1,
+        "score": 0,
         "condition": "shapes question = 2"
     },
     "10": {
-        "question": "Where is the red triangle relative to the square?",
+        "question": "Where is the circle relative to the square?",
         "options": [
             "A. Up and to the right",
             "B. Up and to the left",
@@ -133,11 +133,15 @@
             "D. Down and to the left",
             "E. Directly above",
             "F. Directly below",
-            "G. Overlapping"
+            "G. Directly right",
+            "H. Directly left",
+            "I. Overlapping",
+            "J. No circle identified",
+            "K. No square identified"
         ],
-        "instructions": "\n Answer only in A, B, C, D, E, F or G.",
-        "reference_answer": "B",
-        "model_answer": "A",
+        "instructions": "\n Answer only in A, B, C, D, E, F, G, H or I.",
+        "reference_answer": "A",
+        "model_answer": "J",
         "score": 0,
         "condition": "correctly respond to above questions"
     }

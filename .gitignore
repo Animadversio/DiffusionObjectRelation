@@ -1,6 +1,6 @@
-__pycache__
+*/__pycache__
 */.git_obsl
-*.png
-*.gpulog
-.DS_Store
+*/*.png
+*/*.gpulog
+*/.DS_Store
 
