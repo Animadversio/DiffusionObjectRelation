@@ -4,3 +4,4 @@
 */*.gpulog
 */.DS_Store
 
+*.pyc
