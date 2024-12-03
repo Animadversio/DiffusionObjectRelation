@@ -152,12 +152,12 @@ work_dir
 #demo.py
 develop/
 tmp.py
-data/
+# data/
 output_cv/
 output_all/
 output_demo/
 output_debug/
-data/
+# data/
 output/
 
 #cache for docker
