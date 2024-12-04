@@ -632,4 +632,4 @@ def optimize_feature_vector(epoch=30, embedding_when=0.6, embedding_layer=7, lab
 
 for layer in range(12):
     for embedding_when in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
-        optimize_feature_vector(epoch=30, embedding_when=0.6, embedding_layer=7)
+        optimize_feature_vector(epoch=30, embedding_when=embedding_when, embedding_layer=layer)
