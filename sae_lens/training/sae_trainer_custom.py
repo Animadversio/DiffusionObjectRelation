@@ -11,7 +11,7 @@ from transformer_lens.hook_points import HookedRootModule
 from sae_lens import __version__
 from sae_lens.config import LanguageModelSAERunnerConfig
 from sae_lens.evals import EvalConfig, run_evals
-from sae_lens.training.activations_store import ActivationsStore
+#from sae_lens.training.activations_store import ActivationsStore
 from sae_lens.training.optim import L1Scheduler, get_lr_scheduler
 from sae_lens.training.training_sae import TrainingSAE, TrainStepOutput
 
@@ -61,13 +61,11 @@ class SAETrainer:
         self,
         model: HookedRootModule,
         sae: TrainingSAE,
-        activation_store: ActivationsStore,
         save_checkpoint_fn: SaveCheckpointFn,
         cfg: LanguageModelSAERunnerConfig,
     ) -> None:
         self.model = model
         self.sae = sae
-        self.activations_store = activation_store
         self.save_checkpoint = save_checkpoint_fn
         self.cfg = cfg
 
@@ -171,48 +169,51 @@ class SAETrainer:
     def dead_neurons(self) -> torch.Tensor:
         return (self.n_forward_passes_since_fired > self.cfg.dead_feature_window).bool()
 
-    def fit(self) -> TrainingSAE:
-        pbar = tqdm(total=self.cfg.total_training_tokens, desc="Training SAE")
-
-        self.activations_store.set_norm_scaling_factor_if_needed()
-
-        # Train loop
-        while self.n_training_tokens < self.cfg.total_training_tokens:
-            # Do a training step.
-            layer_acts = self.activations_store.next_batch()[:, 0, :].to(
-                self.sae.device
-            )
-            self.n_training_tokens += self.cfg.train_batch_size_tokens
-
-            step_output = self._train_step(sae=self.sae, sae_in=layer_acts)
-
+    def fit_pilot(self, activations: torch.Tensor, num_batches: int = 10) -> TrainingSAE:
+        """
+        A simplified `fit` function for piloting with precomputed activations.
+        Operates on activations from transformer attention block 1.
+        
+        Args:
+            activations (torch.Tensor): Activation tensor of shape [batch, seq, embedding].
+            num_batches (int): Number of training steps (batches) to use for the pilot.
+        
+        Returns:
+            TrainingSAE: The trained SAE model.
+        """
+        # Check activation shape
+        assert len(activations.shape) == 3, "Activations must have shape [batch, seq, embedding]"
+        batch_size, seq_len, d_in = activations.shape
+        assert d_in == self.sae.cfg.d_in, f"Expected embedding size {self.sae.cfg.d_in}, got {d_in}"
+        
+        # Flatten sequence dimension for input to the SAE
+        flat_activations = activations.view(batch_size * seq_len, d_in)  # Shape: [batch * seq, embedding]
+        
+        # Initialize progress bar
+        pbar = tqdm(total=num_batches, desc="Piloting SAE Training")
+        
+        # Training loop
+        for step in range(num_batches):
+            # Sample a random batch of activations (simulating `next_batch`)
+            indices = torch.randperm(flat_activations.size(0))[:self.cfg.train_batch_size_tokens]
+            batch_activations = flat_activations[indices].to(self.sae.device)  # Move to SAE device
+            
+            # Perform a training step
+            step_output = self._train_step(sae=self.sae, sae_in=batch_activations)
+            
+            # Log progress
             if self.cfg.log_to_wandb:
                 self._log_train_step(step_output)
-                self._run_and_log_evals()
-
-            self._checkpoint_if_needed()
-            self.n_training_steps += 1
-            self._update_pbar(step_output, pbar)
-
-            ### If n_training_tokens > sae_group.cfg.training_tokens, then we should switch to fine-tuning (if we haven't already)
-            self._begin_finetuning_if_needed()
-
-        # fold the estimated norm scaling factor into the sae weights
-        if self.activations_store.estimated_norm_scaling_factor is not None:
-            self.sae.fold_activation_norm_scaling_factor(
-                self.activations_store.estimated_norm_scaling_factor
-            )
-            self.activations_store.estimated_norm_scaling_factor = None
-
-        # save final sae group to checkpoints folder
-        self.save_checkpoint(
-            trainer=self,
-            checkpoint_name=f"final_{self.n_training_tokens}",
-            wandb_aliases=["final_model"],
-        )
-
+            
+            # Update progress bar
+            pbar.update(1)
+            pbar.set_postfix({"Loss": step_output.loss.item()})
+        
+        # Close progress bar
         pbar.close()
+        
         return self.sae
+
 
 
     def _train_step(
@@ -335,7 +336,6 @@ class SAETrainer:
             self.sae.eval()
             eval_metrics, _ = run_evals(
                 sae=self.sae,
-                activation_store=self.activations_store,
                 model=self.model,
                 eval_config=self.trainer_eval_config,
                 model_kwargs=self.cfg.model_kwargs,
