@@ -61,6 +61,65 @@ def find_classify_objects(image, area_threshold=100, radius=16.0):
     return classified_objects_df
 
 
+def find_classify_object_masks(image, area_threshold=100, radius=16.0):
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+    # gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    classified_objects = []
+    object_masks = []
+    # go through each color channel
+    for channel in range(3):
+        gray_image = image[:,:,channel]
+        # Threshold the image to create a binary mask
+        _, binary_mask = cv2.threshold(gray_image, 180, 255, cv2.THRESH_BINARY)
+        # Find contours of the shapes
+        contours, _ = cv2.findContours(binary_mask, 
+                                    cv2.RETR_EXTERNAL, 
+                                    cv2.CHAIN_APPROX_SIMPLE)
+        # Initialize results
+        for i, contour in enumerate(contours):
+            # Calculate properties of the contour
+            approx = cv2.approxPolyDP(contour, 0.04 * cv2.arcLength(contour, True), True)
+            area = cv2.contourArea(contour)
+            x, y, w, h = cv2.boundingRect(contour)
+            # Shape classification based on the number of vertices
+            if len(approx) == 3:
+                shape = "Triangle"
+                s = radius * 2  # Side length
+                h = s * (3 ** 0.5) / 2  # Height of the equilateral triangle
+                expected_area = s * h / 2
+            elif len(approx) == 4:
+                shape = "Square" if abs(w - h) < 5 else "Rectangle"
+                s = radius * 2
+                expected_area = s**2
+            elif len(approx) > 4:
+                shape = "Circle"
+                expected_area = np.pi * radius ** 2
+            else:
+                shape = "Unknown"
+                expected_area = np.nan
+            # Calculate the color of the shape by extracting the region
+            mask = np.zeros_like(gray_image)
+            cv2.drawContours(mask, [contour], -1, 255, -1)
+            mean_color = cv2.mean(image, mask=mask)
+            # Add to results
+            if area < area_threshold:
+                continue
+            classified_objects.append({
+                "Object": i + 1,
+                "Shape": shape,
+                "Color (RGB)": tuple(map(int, mean_color[:3])),
+                "Center (x, y)": (x + w // 2, y + h // 2),
+                "Area": area,
+                "Expected Area": expected_area
+            })
+            object_masks.append(mask)
+
+    # Convert to DataFrame for better visualization
+    classified_objects_df = pd.DataFrame(classified_objects)
+    assert len(classified_objects_df) == len(object_masks)
+    return classified_objects_df, object_masks
+
 
 import pandas as pd
 
