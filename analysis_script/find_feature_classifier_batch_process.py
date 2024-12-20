@@ -86,8 +86,8 @@ def get_red_triangle_pos_others_neg(latent_state, obj_df, objeect_masks):
     positive_embeddings = [np.empty([0, latent_state.shape[-1]])]
     negative_embeddings = [np.empty([0, latent_state.shape[-1]])]
     for i in range(len(obj_df)):
-        if obj_df.iloc[i]['Shape'] == "Triangle" and obj_df.iloc[i]['Color (RGB)'][0] > 225 and \
-            obj_df.iloc[i]['Color (RGB)'][1] < 30 and obj_df.iloc[i]['Color (RGB)'][2] < 30:
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if obj_df.iloc[i]['Shape'] == "Triangle" and Rvalue > 225 and Gvalue < 30 and Bvalue < 30:
             positive_embeddings.append(latent_state[objeect_masks[i], :].numpy())
             negative_embeddings.append(latent_state[~objeect_masks[i], :].numpy())
     # positive_embeddings = np.vstack(positive_embeddings)
