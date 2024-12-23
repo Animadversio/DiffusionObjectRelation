@@ -1,0 +1,14 @@
+{"time":"2024-12-22T23:31:47.245917885-05:00","level":"INFO","msg":"using version","core version":"0.19.1"}
+{"time":"2024-12-22T23:31:47.245929528-05:00","level":"INFO","msg":"created symlink","path":"/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/sae_lens/wandb/run-20241222_233147-rakvpcr1/logs/debug-core.log"}
+{"time":"2024-12-22T23:31:47.363065717-05:00","level":"INFO","msg":"created new stream","id":"rakvpcr1"}
+{"time":"2024-12-22T23:31:47.363094584-05:00","level":"INFO","msg":"stream: started","id":"rakvpcr1"}
+{"time":"2024-12-22T23:31:47.363916015-05:00","level":"INFO","msg":"handler: started","stream_id":"rakvpcr1"}
+{"time":"2024-12-22T23:31:47.363938577-05:00","level":"INFO","msg":"writer: Do: started","stream_id":"rakvpcr1"}
+{"time":"2024-12-22T23:31:47.364306609-05:00","level":"INFO","msg":"sender: started","stream_id":"rakvpcr1"}
+{"time":"2024-12-22T23:31:47.61085224-05:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-22T23:48:14.208247269-05:00","level":"INFO","msg":"Pausing system monitor"}
+{"time":"2024-12-22T23:55:56.985900992-05:00","level":"INFO","msg":"Resuming system monitor"}
+{"time":"2024-12-22T23:55:56.986397157-05:00","level":"INFO","msg":"Pausing system monitor"}
+{"time":"2024-12-22T23:55:57.740899232-05:00","level":"INFO","msg":"Resuming system monitor"}
+{"time":"2024-12-22T23:55:57.756145108-05:00","level":"INFO","msg":"Pausing system monitor"}
+{"time":"2024-12-22T23:55:57.911139891-05:00","level":"INFO","msg":"Resuming system monitor"}

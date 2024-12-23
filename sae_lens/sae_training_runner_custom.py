@@ -17,7 +17,7 @@ from sae_lens.load_model import load_model
 from sae_lens.training.activations_store_custom import ActivationsStore
 from sae_lens.training.geometric_median import compute_geometric_median
 from sae_lens.training.sae_trainer_custom import SAETrainer
-from sae_lens.training.training_sae import TrainingSAE, TrainingSAEConfig
+from sae_lens.training.training_sae_custom import TrainingSAE, TrainingSAEConfig
 
 
 class InterruptedException(Exception):
@@ -77,7 +77,6 @@ class SAETrainingRunner:
             )
 
         trainer = SAETrainer(
-            model=self.model,
             sae=self.sae,
             activation_store=self.activations_store,
             save_checkpoint_fn=self.save_checkpoint,

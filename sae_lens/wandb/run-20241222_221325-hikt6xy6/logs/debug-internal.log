@@ -1,0 +1,9 @@
+{"time":"2024-12-22T22:13:25.856461944-05:00","level":"INFO","msg":"using version","core version":"0.19.1"}
+{"time":"2024-12-22T22:13:25.856474986-05:00","level":"INFO","msg":"created symlink","path":"/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/sae_lens/wandb/run-20241222_221325-hikt6xy6/logs/debug-core.log"}
+{"time":"2024-12-22T22:13:26.6112557-05:00","level":"INFO","msg":"created new stream","id":"hikt6xy6"}
+{"time":"2024-12-22T22:13:26.611282783-05:00","level":"INFO","msg":"stream: started","id":"hikt6xy6"}
+{"time":"2024-12-22T22:13:26.622017515-05:00","level":"INFO","msg":"handler: started","stream_id":"hikt6xy6"}
+{"time":"2024-12-22T22:13:26.625109877-05:00","level":"INFO","msg":"writer: Do: started","stream_id":"hikt6xy6"}
+{"time":"2024-12-22T22:13:26.630925761-05:00","level":"INFO","msg":"sender: started","stream_id":"hikt6xy6"}
+{"time":"2024-12-22T22:13:26.900182014-05:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-22T22:13:33.517822723-05:00","level":"INFO","msg":"Pausing system monitor"}

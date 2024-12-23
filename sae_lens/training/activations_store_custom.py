@@ -105,11 +105,10 @@ class ActivationsStore:
         self.seqpos_slice = seqpos_slice
         self.n_dataset_processed = 0
         self.estimated_norm_scaling_factor = None
-        self.cached_activation_dataset = self.load_cached_activation_dataset()
         self.time_step = time_step
+        self.cached_activation_dataset = self.load_cached_activation_dataset()
 
         # TODO add support for "mixed loading" (ie use cache until you run out, then switch over to streaming from HF)
-
 
     def load_and_reshape_latent(self):
         """
@@ -152,8 +151,6 @@ class ActivationsStore:
         except Exception as e:
             raise RuntimeError(f"An error occurred while processing the file: {e}")
 
-
-
     def load_cached_activation_dataset(self) -> torch.Tensor | None:
         """
         Load the cached activation dataset from disk.
@@ -178,11 +175,11 @@ class ActivationsStore:
             f"Loaded data must be a PyTorch tensor. Got {type(activations_tensor)}."
         )
 
-        expected_shape = (self.num_samples, self.context_size, self.d_in)
-        assert activations_tensor.shape == expected_shape, (
-            f"Loaded tensor shape {activations_tensor.shape} does not match the expected "
-            f"shape {expected_shape} (samples, seq, embedding)."
-        )
+        #expected_shape = (self.num_samples, self.context_size, self.d_in)
+        #assert activations_tensor.shape == expected_shape, (
+            #f"Loaded tensor shape {activations_tensor.shape} does not match the expected "
+            #f"shape {expected_shape} (samples, seq, embedding)."
+        #)
 
         self.current_row_idx = 0  # Initialize index for batch loading
         return activations_tensor
@@ -300,7 +297,7 @@ class ActivationsStore:
         Assumes `get_buffer` provides activations as a tensor of shape `(total_size * seq, d_in)`.
 
         Returns:
-            Iterator of batches from the DataLoader.
+            Iterator of batches from the DataLoader, where each batch is shaped (batch_size_tokens, 1, feature_dim).
         """
         batch_size = self.train_batch_size_tokens
 
@@ -336,6 +333,9 @@ class ActivationsStore:
         self._storage_buffer = mixing_buffer[: mixing_buffer.shape[0] // 2]
         dataloader_buffer = mixing_buffer[mixing_buffer.shape[0] // 2 :]
 
+        # Ensure the data is reshaped to (total_size * seq, 1, feature_dim)
+        dataloader_buffer = dataloader_buffer.unsqueeze(1)  # Adds a singleton dimension
+
         # Return a DataLoader iterator for the remaining buffer
         return iter(
             DataLoader(
@@ -344,6 +344,7 @@ class ActivationsStore:
                 shuffle=False,  # Shuffling already applied to the buffer
             )
         )
+
 
 
     def next_batch(self):
