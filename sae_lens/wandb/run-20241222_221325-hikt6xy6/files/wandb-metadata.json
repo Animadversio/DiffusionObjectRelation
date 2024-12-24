@@ -1,0 +1,45 @@
+{
+  "os":  "Linux-4.18.0-513.18.1.el8_9.x86_64-x86_64-with-glibc2.28",
+  "python":  "CPython 3.10.14",
+  "startedAt":  "2024-12-23T03:13:25.835184Z",
+  "program":  "/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/sae_lens/training_a_sparse_autoencoder_custom.ipynb",
+  "codePath":  "sae_lens/training_a_sparse_autoencoder_custom.ipynb",
+  "git":  {
+    "remote":  "https://github.com/Animadversio/DiffusionObjectRelation.git",
+    "commit":  "9b9aa80505696233652177074930e562193f9a29"
+  },
+  "email":  "jfan@g.harvard.edu",
+  "root":  "/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/sae_lens",
+  "host":  "holygpu8a22606.rc.fas.harvard.edu",
+  "executable":  "/n/home03/fjxdaisy/.conda/envs/torch2/bin/python",
+  "codePathLocal":  "training_a_sparse_autoencoder_custom.ipynb",
+  "cpu_count":  64,
+  "cpu_count_logical":  64,
+  "gpu":  "NVIDIA A100-SXM4-80GB",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "53660876800",
+      "used":  "15853645824"
+    }
+  },
+  "memory":  {
+    "total":  "1081284943872"
+  },
+  "cpu":  {
+    "count":  64,
+    "countLogical":  64
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA A100-SXM4-80GB",
+      "memoryTotal":  "85899345920",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    }
+  ],
+  "slurm":  {
+    "job_id":  "63534441"
+  },
+  "cudaVersion":  "12.4"
+}

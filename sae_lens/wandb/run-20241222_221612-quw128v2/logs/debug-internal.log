@@ -1,0 +1,15 @@
+{"time":"2024-12-22T22:16:12.083813099-05:00","level":"INFO","msg":"using version","core version":"0.19.1"}
+{"time":"2024-12-22T22:16:12.083826324-05:00","level":"INFO","msg":"created symlink","path":"/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/sae_lens/wandb/run-20241222_221612-quw128v2/logs/debug-core.log"}
+{"time":"2024-12-22T22:16:12.198461944-05:00","level":"INFO","msg":"created new stream","id":"quw128v2"}
+{"time":"2024-12-22T22:16:12.198483342-05:00","level":"INFO","msg":"stream: started","id":"quw128v2"}
+{"time":"2024-12-22T22:16:12.19954223-05:00","level":"INFO","msg":"handler: started","stream_id":"quw128v2"}
+{"time":"2024-12-22T22:16:12.199566905-05:00","level":"INFO","msg":"writer: Do: started","stream_id":"quw128v2"}
+{"time":"2024-12-22T22:16:12.200222378-05:00","level":"INFO","msg":"sender: started","stream_id":"quw128v2"}
+{"time":"2024-12-22T22:16:12.409121404-05:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-22T22:16:14.685858052-05:00","level":"INFO","msg":"Pausing system monitor"}
+{"time":"2024-12-22T22:17:43.439911168-05:00","level":"INFO","msg":"Resuming system monitor"}
+{"time":"2024-12-22T22:17:43.440405287-05:00","level":"INFO","msg":"Pausing system monitor"}
+{"time":"2024-12-22T22:17:49.06821318-05:00","level":"INFO","msg":"Resuming system monitor"}
+{"time":"2024-12-22T22:17:49.104866939-05:00","level":"INFO","msg":"Pausing system monitor"}
+{"time":"2024-12-22T22:17:49.267433429-05:00","level":"INFO","msg":"Resuming system monitor"}
+{"time":"2024-12-22T22:27:55.581134289-05:00","level":"INFO","msg":"Pausing system monitor"}
