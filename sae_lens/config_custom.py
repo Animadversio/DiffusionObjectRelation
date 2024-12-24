@@ -109,11 +109,11 @@ class LanguageModelSAERunnerConfig:
     """
 
     # Data Generating Function (Model + Training Distibuion)
-    model_batch_size: int = 1
+    model_batch_size: int = 128
     context_size: int = 128
     use_cached_activations: bool = True
     cached_activations_path: str = (
-        "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/latent_store/red_blue_8_pos_rndembposemb_img_latent_residual_prompt9_seed7.pkl"  # Defaults to "activations/{dataset}/{model}/{full_hook_name}_{hook_head_index}"
+        "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/latent_store/red_blue_8_pos_rndembposemb_repr_vector_dataset_all.pkl"  # Defaults to "activations/{dataset}/{model}/{full_hook_name}_{hook_head_index}"
     )
     time_step: int = 7
     # SAE Parameters
