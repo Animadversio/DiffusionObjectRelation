@@ -11,7 +11,7 @@ from sae_lens import __version__
 from sae_lens.config_custom import LanguageModelSAERunnerConfig
 from sae_lens.training.activations_store_custom import ActivationsStore
 from sae_lens.training.optim import L1Scheduler, get_lr_scheduler
-from sae_lens.training.training_sae import TrainingSAE, TrainStepOutput
+from sae_lens.training.training_sae_custom import TrainingSAE, TrainStepOutput
 
 
 def _log_feature_sparsity(
@@ -164,14 +164,14 @@ class SAETrainer:
 
             if self.cfg.log_to_wandb:
                 self._log_train_step(step_output)
-                self._run_and_log_evals()
+                #self._run_and_log_evals()
 
             self._checkpoint_if_needed()
             self.n_training_steps += 1
             self._update_pbar(step_output, pbar)
 
             ### If n_training_tokens > sae_group.cfg.training_tokens, then we should switch to fine-tuning (if we haven't already)
-            self._begin_finetuning_if_needed()
+            #self._begin_finetuning_if_needed()
 
         # fold the estimated norm scaling factor into the sae weights
         if self.activations_store.estimated_norm_scaling_factor is not None:

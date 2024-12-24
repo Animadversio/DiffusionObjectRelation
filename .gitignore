@@ -9,5 +9,5 @@ visualizations/
 
 PixArt-alpha/asset/*
 
-sae_lens/wandb/*
+**/wandb/*
 sae_lens/checkpoints/*

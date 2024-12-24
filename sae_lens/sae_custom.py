@@ -155,7 +155,7 @@ class SAE(HookedRootModule):
         self.hook_sae_recons = HookPoint()
         self.hook_sae_error = HookPoint()
 
-
+        self.turn_off_forward_pass_hook_z_reshaping()
         # handle run time activation normalization if needed:
         if self.cfg.normalize_activations == "constant_norm_rescale":
             #  we need to scale the norm of the input and store the scaling factor
@@ -271,6 +271,7 @@ class SAE(HookedRootModule):
             torch.zeros(self.cfg.d_sae, dtype=self.dtype, device=self.device)
         )
         self.initialize_weights_basic()
+
 
     @overload
     def to(
@@ -395,13 +396,6 @@ class SAE(HookedRootModule):
     def process_sae_in(
         self, sae_in: Float[torch.Tensor, "... d_in"]
     ) -> Float[torch.Tensor, "... d_sae"]:
-        def reshape_fn_in(x: torch.Tensor):
-            self.d_head = x.shape[-1]  # type: ignore
-            self.reshape_fn_in = lambda x: einops.rearrange(
-                x, "... n_heads d_head -> ... (n_heads d_head)"
-            )
-            return einops.rearrange(x, "... n_heads d_head -> ... (n_heads d_head)")
-        self.reshape_fn_in = reshape_fn_in
         sae_in = sae_in.to(self.dtype)
         sae_in = self.reshape_fn_in(sae_in)
         sae_in = self.hook_sae_input(sae_in)
@@ -611,7 +605,11 @@ class SAE(HookedRootModule):
     def from_dict(cls, config_dict: dict[str, Any]) -> "SAE":
         return cls(SAEConfig.from_dict(config_dict))
 
-
+    def turn_off_forward_pass_hook_z_reshaping(self):
+        self.reshape_fn_in = lambda x: x
+        self.reshape_fn_out = lambda x, d_head: x  # noqa: ARG005
+        self.d_head = None
+        self.hook_z_reshaping_mode = False
 
 class TopK(nn.Module):
     def __init__(

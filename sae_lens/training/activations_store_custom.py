@@ -128,21 +128,21 @@ class ActivationsStore:
                 data = pickle.load(f)
 
             # Extract the latent tensor
-            latent = data['block_11_residual_spatial_state_traj']  # Shape: [time_steps, batch, 8, 8, feature_dim]
+            latent = data['repr_vectors']  # Shape: [time_steps, batch, 8, 8, feature_dim]
 
             # Check if the time step is valid
-            if self.time_step >= latent.shape[0]:
-                raise ValueError(f"Invalid time_step {self.time_step}. Maximum allowed is {latent.shape[0] - 1}.")
+            #if self.time_step >= latent.shape[0]:
+                #raise ValueError(f"Invalid time_step {self.time_step}. Maximum allowed is {latent.shape[0] - 1}.")
 
             # Extract the tensor for the given time step
-            time_step_tensor = latent[self.time_step]  # Shape: [batch, 8, 8, feature_dim]
+            #time_step_tensor = latent[self.time_step]  # Shape: [batch, 8, 8, feature_dim]
 
             # Reshape the tensor to [batch, sequence_len (8*8), feature_dim]
-            batch_size, height, width, feature_dim = time_step_tensor.shape
-            sequence_len = height * width
-            reshaped_tensor = time_step_tensor.reshape(batch_size, sequence_len, feature_dim)
+            #batch_size, height, width, feature_dim = time_step_tensor.shape
+            #sequence_len = height * width
+            #reshaped_tensor = time_step_tensor.reshape(batch_size, sequence_len, feature_dim)
 
-            return reshaped_tensor
+            return latent
 
         except FileNotFoundError:
             raise FileNotFoundError(f"The file at {self.cached_activations_path} was not found.")
@@ -171,9 +171,9 @@ class ActivationsStore:
         activations_tensor = self.load_and_reshape_latent()
         
         # Ensure it's the expected type and shape
-        assert isinstance(activations_tensor, torch.Tensor), (
-            f"Loaded data must be a PyTorch tensor. Got {type(activations_tensor)}."
-        )
+        #assert isinstance(activations_tensor, torch.Tensor), (
+            #f"Loaded data must be a PyTorch tensor. Got {type(activations_tensor)}."
+        #)
 
         #expected_shape = (self.num_samples, self.context_size, self.d_in)
         #assert activations_tensor.shape == expected_shape, (
@@ -243,36 +243,36 @@ class ActivationsStore:
         shuffle: bool = True,
     ) -> torch.Tensor:
         """
-        Loads the next `n_batches_in_buffer` batches of activations into a tensor.
+        Loads the next n_batches_in_buffer batches of activations into a tensor.
 
-        - Assumes `cached_activation_dataset` is a PyTorch tensor of shape `[batch, seq, d_in]`.
-        - Supports optional shuffling and normalization.
-        - Raises StopIteration when the dataset is exhausted and `raise_on_epoch_end` is True.
-
-        Returns:
-            Tensor of activations with shape `(total_size * seq, d_in)`.
+        Assumes the dataset is already cached in self.cached_activation_dataset.
+        Returns a tensor reshaped to `[total_size, num_layers, d_in]`.
         """
         assert self.cached_activation_dataset is not None, "No cached dataset found."
 
-        # Compute total size and validate dataset shape
-        batch_size, seq, d_in = self.cached_activation_dataset.shape
-        expected_total_size = self.store_batch_size_prompts * n_batches_in_buffer
+        # Extract key dimensions
+        batch_size = self.store_batch_size_prompts
+        d_in = self.d_in
+        num_layers = 1  # Fixed from the original function
+        total_size = batch_size * n_batches_in_buffer
 
-        if self.current_row_idx > batch_size - n_batches_in_buffer:
+        # Check if we're at the end of the dataset
+        cached_size = self.cached_activation_dataset.shape[0]
+        if self.current_row_idx > cached_size - total_size:
             self.current_row_idx = 0
             if raise_on_epoch_end:
                 raise StopIteration
 
-        # Slice the cached dataset to get the requested number of batches
-        activations = self.cached_activation_dataset[
-            self.current_row_idx : self.current_row_idx + n_batches_in_buffer
-        ]
-        self.current_row_idx += n_batches_in_buffer
+        # Slice from the cached dataset
+        start_idx = self.current_row_idx
+        end_idx = start_idx + total_size
+        activations = self.cached_activation_dataset[start_idx:end_idx]
+        self.current_row_idx += total_size
 
-        # Reshape activations: [n_batches_in_buffer, seq, d_in] -> [total_size * seq, d_in]
-        activations = activations.reshape(-1, d_in)
+        # Reshape to match the required output shape
+        activations = activations.reshape(-1, num_layers, d_in)
 
-        # Shuffle activations if required
+        # Shuffle the activations if required
         if shuffle:
             activations = activations[torch.randperm(activations.shape[0])]
 
@@ -281,6 +281,9 @@ class ActivationsStore:
             activations = self.apply_norm_scaling_factor(activations)
 
         return activations
+
+
+
 
 
     @torch.no_grad()
@@ -334,7 +337,7 @@ class ActivationsStore:
         dataloader_buffer = mixing_buffer[mixing_buffer.shape[0] // 2 :]
 
         # Ensure the data is reshaped to (total_size * seq, 1, feature_dim)
-        dataloader_buffer = dataloader_buffer.unsqueeze(1)  # Adds a singleton dimension
+        #dataloader_buffer = dataloader_buffer.unsqueeze(1)  # Adds a singleton dimension
 
         # Return a DataLoader iterator for the remaining buffer
         return iter(
