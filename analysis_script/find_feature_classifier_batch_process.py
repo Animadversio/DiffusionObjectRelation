@@ -64,16 +64,33 @@ def get_triangle_pos_others_neg(latent_state, obj_df, objeect_masks):
     """
     Top object is positive, others are negative including background. 
     """
-    # if len(obj_df) != 2:
-    #     return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
-    positive_embeddings = [np.empty([0, latent_state.shape[-1]])]
-    negative_embeddings = [np.empty([0, latent_state.shape[-1]])]
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
     for i in range(len(obj_df)):
         if obj_df.iloc[i]['Shape'] == "Triangle":
-            positive_embeddings.append(latent_state[objeect_masks[i], :].numpy())
-            negative_embeddings.append(latent_state[~objeect_masks[i], :].numpy())
-    # positive_embeddings = np.vstack(positive_embeddings)
-    # negative_embeddings = np.vstack(negative_embeddings)
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
+def get_circle_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Top object is positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        if obj_df.iloc[i]['Shape'] == "Circle":
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
     return positive_embeddings, negative_embeddings
 
 
@@ -81,18 +98,56 @@ def get_red_triangle_pos_others_neg(latent_state, obj_df, objeect_masks):
     """
     Top object is positive, others are negative including background. 
     """
-    # if len(obj_df) != 2:
-    #     return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
-    positive_embeddings = [np.empty([0, latent_state.shape[-1]])]
-    negative_embeddings = [np.empty([0, latent_state.shape[-1]])]
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
     for i in range(len(obj_df)):
         Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
         if obj_df.iloc[i]['Shape'] == "Triangle" and Rvalue > 225 and Gvalue < 30 and Bvalue < 30:
-            positive_embeddings.append(latent_state[objeect_masks[i], :].numpy())
-            negative_embeddings.append(latent_state[~objeect_masks[i], :].numpy())
-    # positive_embeddings = np.vstack(positive_embeddings)
-    # negative_embeddings = np.vstack(negative_embeddings)
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
     return positive_embeddings, negative_embeddings
+
+
+def get_red_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Top object is positive, others are negative including background. 
+    """
+    
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if Rvalue > 225 and Gvalue < 30 and Bvalue < 30:
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
+def get_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Top object is positive, others are negative including background. 
+    """
+    
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
 
 # %%
 # try to classify top (+) and down (-) objects
@@ -265,12 +320,14 @@ saveroot = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projec
 figdir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/Figure_latent_feature_heatmap'
 # %%
 seed = 0
-annot_label = "triangle_vs_others"
 for t_index in reversed(range(14)):
-    for get_pos_neg_embeddings_func, annot_label in [(get_triangle_pos_others_neg, "triangle_vs_others"), 
-                                                    (get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
-                                                    (get_top_obj_pos_others_neg, "topobj_vs_others"),
-                                                    (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
+    for get_pos_neg_embeddings_func, annot_label in [(get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
+                                                     (get_obj_pos_others_neg, "obj_vs_others"),
+                                                    (get_red_obj_pos_others_neg, "red_obj_vs_others"),
+                                                    (get_triangle_pos_others_neg, "triangle_vs_others"), 
+                                                    (get_circle_pos_others_neg, "circle_vs_others"),
+                                                    # (get_top_obj_pos_others_neg, "topobj_vs_others"),
+                                                    # (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
                                                     ]:
         for training_pass in [("cond",), ("uncond",), ("cond", "uncond")]:
             training_pass_str = "-".join(training_pass)+"Pass"
