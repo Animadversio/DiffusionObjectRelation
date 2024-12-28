@@ -332,7 +332,7 @@ def collect_pos_neg_embeddings(saveroot, t_index, prompt_ids, seed_ids=range(10)
 #%%
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score
 
 def train_classifier(positive_embeddings, negative_embeddings, test_size=0.2, random_state=42, fit_intercept=False, solver='lbfgs', max_iter=100):
     """
@@ -354,18 +354,25 @@ def train_classifier(positive_embeddings, negative_embeddings, test_size=0.2, ra
     print(f"Training accuracy: {train_score:.3f}")
     print(f"Test accuracy: {test_score:.3f}")
     # compute the confusion matrix
-    cm = confusion_matrix(y_test, clf.predict(X_test))
+    y_pred = clf.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
     print("Confusion matrix: \n", cm)
-    print(f"Precision (TP / (TP + FP)): {cm[1,1] / (cm[1,1] + cm[1,0]):.3f}")
-    print(f"Recall (TP / (TP + FN)): {cm[1,1] / (cm[1,1] + cm[0,1]):.3f}")
+    # print(f"Precision (TP / (TP + FP)): {cm[1,1] / (cm[1,1] + cm[1,0]):.3f}") # Bug fixed Dec27, 2024 cm[1,1] / (cm[1,1] + cm[0,1])
+    # print(f"Recall (TP / (TP + FN)): {cm[1,1] / (cm[1,1] + cm[0,1]):.3f}")
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    print(f"Precision (TP / (TP + FP)): {precision:.3f}")
+    print(f"Recall (TP / (TP + FN)): {recall:.3f}")
+    print(f"F1 score: {f1:.3f}")
     eval_dict = {
         "classifier": clf, 
         "train_score": train_score,
         "test_score": test_score,
         "confusion_matrix": cm,
-        "precision": cm[1,1] / (cm[1,1] + cm[1,0]),
-        "recall": cm[1,1] / (cm[1,1] + cm[0,1]),
-        "f1_score": 2 * cm[1,1] / (2 * cm[1,1] + cm[1,0] + cm[0,1]),
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1,
     }
     return clf, X, y, eval_dict
 
