@@ -60,6 +60,22 @@ def get_top_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
     return [positive_embeddings], [negative_embeddings]
 
 
+def get_bottom_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Bottom object is positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    if obj_df.iloc[0]['Center (x, y)'][1] > obj_df.iloc[1]['Center (x, y)'][1]:
+        positive_embeddings = latent_state[objeect_masks[0], :].numpy()
+        negative_embeddings = latent_state[~objeect_masks[0], :].numpy()
+    else:
+        positive_embeddings = latent_state[objeect_masks[1], :].numpy()
+        negative_embeddings = latent_state[~objeect_masks[1], :].numpy()
+    return [positive_embeddings], [negative_embeddings]
+
+
 def get_triangle_pos_others_neg(latent_state, obj_df, objeect_masks):
     """
     Top object is positive, others are negative including background. 
@@ -94,6 +110,23 @@ def get_circle_pos_others_neg(latent_state, obj_df, objeect_masks):
     return positive_embeddings, negative_embeddings
 
 
+def get_square_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Top object is positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        if obj_df.iloc[i]['Shape'] == "Square":
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
 def get_red_triangle_pos_others_neg(latent_state, obj_df, objeect_masks):
     """
     Top object is positive, others are negative including background. 
@@ -112,11 +145,100 @@ def get_red_triangle_pos_others_neg(latent_state, obj_df, objeect_masks):
     return positive_embeddings, negative_embeddings
 
 
+def get_red_square_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Red squares are positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if obj_df.iloc[i]['Shape'] == "Square" and Rvalue > 225 and Gvalue < 30 and Bvalue < 30:
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
+def get_red_circle_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Red circles are positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if obj_df.iloc[i]['Shape'] == "Circle" and Rvalue > 225 and Gvalue < 30 and Bvalue < 30:
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
+def get_blue_triangle_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Blue triangles are positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if obj_df.iloc[i]['Shape'] == "Triangle" and Rvalue < 30 and Gvalue < 30 and Bvalue > 225:
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
+def get_blue_square_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Blue squares are positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if obj_df.iloc[i]['Shape'] == "Square" and Rvalue < 30 and Gvalue < 30 and Bvalue > 225:
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
+def get_blue_circle_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Blue circles are positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if obj_df.iloc[i]['Shape'] == "Circle" and Rvalue < 30 and Gvalue < 30 and Bvalue > 225:
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
 def get_red_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
     """
-    Top object is positive, others are negative including background. 
+    Red objects are positive, others are negative including background. 
     """
-    
     if len(obj_df) != 2:
         return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
     
@@ -124,6 +246,24 @@ def get_red_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
     for i in range(len(obj_df)):
         Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
         if Rvalue > 225 and Gvalue < 30 and Bvalue < 30:
+            positive_token_mask = positive_token_mask | objeect_masks[i]
+            
+    positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
+    negative_embeddings = [latent_state[~positive_token_mask, :].numpy()]
+    return positive_embeddings, negative_embeddings
+
+
+def get_blue_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Blue object is positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    
+    positive_token_mask = np.zeros_like(objeect_masks[0], dtype=bool)
+    for i in range(len(obj_df)):
+        Rvalue, Gvalue, Bvalue = obj_df.iloc[i]['Color (RGB)']
+        if Rvalue < 30 and Gvalue < 30 and Bvalue > 225:
             positive_token_mask = positive_token_mask | objeect_masks[i]
             
     positive_embeddings = [latent_state[positive_token_mask, :].numpy()]
@@ -161,7 +301,7 @@ def collect_pos_neg_embeddings(saveroot, t_index, prompt_ids, seed_ids=range(10)
             latent_file = f"red_blue_8_pos_rndembposemb_img_latent_residual_prompt{prompt_idx}_seed{seed_idx}.pkl"
             latent_path = os.path.join(saveroot, latent_file)
             data = pickle.load(open(latent_path, 'rb'))
-
+            # data = torch.load(latent_path, map_location=torch.device('cpu'))
             image_logs = data['image_logs']
             batch_size = len(image_logs[0]['images'])
             residual_state_traj = data['block_11_residual_spatial_state_traj']
@@ -206,7 +346,7 @@ def train_classifier(positive_embeddings, negative_embeddings, test_size=0.2, ra
     # Split data into train and test sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
     # Train the classifier
-    clf = LogisticRegression(random_state=random_state, fit_intercept=fit_intercept, max_iter=max_iter, solver=solver)
+    clf = LogisticRegression(random_state=random_state, fit_intercept=fit_intercept, max_iter=max_iter, solver=solver, n_jobs=-1)
     clf.fit(X_train, y_train)
     # Evaluate performance
     train_score = clf.score(X_train, y_train)
@@ -321,13 +461,14 @@ figdir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects
 # %%
 seed = 0
 for t_index in reversed(range(14)):
-    for get_pos_neg_embeddings_func, annot_label in [(get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
-                                                     (get_obj_pos_others_neg, "obj_vs_others"),
-                                                    (get_red_obj_pos_others_neg, "red_obj_vs_others"),
-                                                    (get_triangle_pos_others_neg, "triangle_vs_others"), 
-                                                    (get_circle_pos_others_neg, "circle_vs_others"),
-                                                    # (get_top_obj_pos_others_neg, "topobj_vs_others"),
-                                                    # (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
+    for get_pos_neg_embeddings_func, annot_label in [
+                        (get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
+                        (get_obj_pos_others_neg, "obj_vs_others"),
+                        (get_red_obj_pos_others_neg, "red_obj_vs_others"),
+                        (get_triangle_pos_others_neg, "triangle_vs_others"), 
+                        (get_circle_pos_others_neg, "circle_vs_others"),
+                        # (get_top_obj_pos_others_neg, "topobj_vs_others"),
+                        # (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
                                                     ]:
         for training_pass in [("cond",), ("uncond",), ("cond", "uncond")]:
             training_pass_str = "-".join(training_pass)+"Pass"
@@ -343,3 +484,39 @@ for t_index in reversed(range(14)):
                 saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_linear_heatmap_{training_pass_str}", figh)
                 plt.close("all")
 
+
+#%%
+
+seed = 0
+for t_index in reversed(range(14)):
+    for get_pos_neg_embeddings_func, annot_label in [
+                        (get_bottom_obj_pos_others_neg, "bottomobj_vs_others"),
+                        (get_square_pos_others_neg, "square_vs_others"),
+                        (get_red_circle_pos_others_neg, "red_circle_vs_others"),
+                        (get_red_square_pos_others_neg, "red_square_vs_others"),
+                        (get_blue_obj_pos_others_neg, "blue_obj_vs_others"),
+                        (get_blue_circle_pos_others_neg, "blue_circle_vs_others"),
+                        (get_blue_square_pos_others_neg, "blue_square_vs_others"),
+                        (get_blue_triangle_pos_others_neg, "blue_triangle_vs_others"),
+                        # (get_obj_pos_others_neg, "obj_vs_others"),
+                        # (get_red_obj_pos_others_neg, "red_obj_vs_others"),
+                        # (get_triangle_pos_others_neg, "triangle_vs_others"), 
+                        # (get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
+                        # (get_circle_pos_others_neg, "circle_vs_others"),
+                        # (get_top_obj_pos_others_neg, "topobj_vs_others"),
+                        # (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
+                            ]:
+        for training_pass in [("cond",), ("uncond",), ("cond", "uncond")]:
+            training_pass_str = "-".join(training_pass)+"Pass"
+            positive_embeddings, negative_embeddings = collect_pos_neg_embeddings(saveroot, t_index=t_index, prompt_ids=range(16), seed_ids=range(10), 
+                                                                                get_pos_neg_embeddings_func=get_pos_neg_embeddings_func, diffusion_pass=training_pass)
+            clf, boundary_vector, eval_dict = train_classifier_and_visualize(positive_embeddings, negative_embeddings, 
+                                                    visualize=False, solver='liblinear', max_iter=100) # liblinear | lbfgs | saga
+            pkl.dump({"classifier": clf, "boundary_vector": boundary_vector, "eval_dict": eval_dict}, 
+                    open(join(figdir, f"red_blue_8_relation_diff_t{t_index}_{annot_label}_classifier_{training_pass_str}.pkl"), 'wb'))
+            # for prompt_idx in range(16):
+            #     figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=True, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
+            #     saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_relu_heatmap_{training_pass_str}", figh)
+            #     figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=False, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
+            #     saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_linear_heatmap_{training_pass_str}", figh)
+            #     plt.close("all")
