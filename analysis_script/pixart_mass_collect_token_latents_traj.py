@@ -94,7 +94,7 @@ for random_seed in trange(10):
             t_steps, batch_size2, seqlen, hidden_dim = residual_state_traj.shape
             residual_spatial_state_traj = residual_state_traj.reshape(t_steps, batch_size2, int(math.sqrt(seqlen)), int(math.sqrt(seqlen)), hidden_dim)
             print(layer_idx, residual_spatial_state_traj.shape) # (14, 50, 8, 8, 768)
-            savedict[f"block_{layer_idx}_residual_spatial_state_traj"] = residual_spatial_state_traj
+            savedict[f"block_{layer_idx}_residual_spatial_state_traj"] = residual_spatial_state_traj.detach().cpu()
         
         pkl.dump(savedict, 
                 open(join(saveroot, f"red_blue_8_pos_rndembposemb_img_latent_residual_allblocks_prompt{prompt_idx}_seed{random_seed}.pkl"), "wb"))
