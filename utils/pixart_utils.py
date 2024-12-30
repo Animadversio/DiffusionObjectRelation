@@ -292,12 +292,57 @@ def convert_checkpoint_to_diffusers_transformer(orig_ckpt_path, dump_path=None, 
         transformer.save_pretrained(os.path.join(dump_path, "transformer"))
     return transformer
 
+
+def construct_pixart_transformer_from_config(config, ):
+    """
+    config: config object
+    transformer_params: dict, if None, use PixArt_model_configs[config.model]
+        should contain fields: depth, hidden_size, patch_size, num_heads
+    return: transformer object
+    """
+    import sys
+    sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/PixArt-alpha")
+    from diffusion.model.builder import build_model
+    
+    weight_dtype = torch.float32
+    if config.mixed_precision == "fp16": # accelerator.
+        weight_dtype = torch.float16
+    elif config.mixed_precision == "bf16": # accelerator.
+        weight_dtype = torch.bfloat16
+        
+    image_size = config.image_size  # @param [256, 512, 1024]
+    latent_size = int(image_size) // 8
+    pred_sigma = getattr(config, 'pred_sigma', True)
+    learn_sigma = getattr(config, 'learn_sigma', True) and pred_sigma
+    model_kwargs={"window_block_indexes": config.window_block_indexes, "window_size": config.window_size,
+                    "use_rel_pos": config.use_rel_pos, "lewei_scale": config.lewei_scale, 'config':config,
+                    'model_max_length': config.model_max_length}
+
+    image_size = config.image_size  # @param [256, 512, 1024]
+    latent_size = int(image_size) // 8
+    pred_sigma = getattr(config, 'pred_sigma', True)
+    learn_sigma = getattr(config, 'learn_sigma', True) and pred_sigma
+    model_kwargs={"window_block_indexes": config.window_block_indexes, "window_size": config.window_size,
+                    "use_rel_pos": config.use_rel_pos, "lewei_scale": config.lewei_scale, 'config':config,
+                    'model_max_length': config.model_max_length}
+    # train_diffusion = IDDPM(str(config.train_sampling_steps), learn_sigma=learn_sigma, pred_sigma=pred_sigma, snr=config.snr_loss)
+    model = build_model(config.model,
+                    config.grad_checkpointing,
+                    config.get('fp32_attention', False),
+                    input_size=latent_size,
+                    learn_sigma=learn_sigma,
+                    pred_sigma=pred_sigma,
+                    **model_kwargs) #.train()
+    return model
+
+
 PixArt_model_configs = {
     'PixArt_XL_2': {'depth': 28, 'hidden_size': 1152, 'patch_size': 2, 'num_heads': 16},
     'PixArt_L_2': {'depth': 24, 'hidden_size': 768, 'patch_size': 2, 'num_heads': 12},
     'PixArt_B_2': {'depth': 12, 'hidden_size': 768, 'patch_size': 2, 'num_heads': 12},
     'PixArt_S_2': {'depth': 12, 'hidden_size': 384, 'patch_size': 2, 'num_heads': 6},
 }
+
 
 def construct_diffuser_transformer_from_config(config, transformer_params=None):
     """
@@ -341,6 +386,8 @@ def construct_diffuser_transformer_from_config(config, transformer_params=None):
             caption_channels=config.caption_channels,
     )
     return transformer
+
+
 
 from diffusers.pipelines.pixart_alpha import PixArtAlphaPipeline
 def construct_diffuser_pipeline_from_config(config, pipeline_class=PixArtAlphaPipeline):
