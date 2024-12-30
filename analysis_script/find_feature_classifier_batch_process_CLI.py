@@ -502,64 +502,76 @@ positive_threshold = 180
 saveroot = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/latent_store"
 figdir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/Figure_latent_feature_heatmap'
 # %%
-seed = 0
-for t_index in reversed(range(14)):
-    for get_pos_neg_embeddings_func, annot_label in [
-                        (get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
-                        (get_obj_pos_others_neg, "obj_vs_others"),
-                        (get_red_obj_pos_others_neg, "red_obj_vs_others"),
-                        (get_triangle_pos_others_neg, "triangle_vs_others"), 
-                        (get_circle_pos_others_neg, "circle_vs_others"),
-                        # (get_top_obj_pos_others_neg, "topobj_vs_others"),
-                        # (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
-                                                    ]:
-        for training_pass in [("cond",), ("uncond",), ("cond", "uncond")]:
-            training_pass_str = "-".join(training_pass)+"Pass"
-            positive_embeddings, negative_embeddings = collect_pos_neg_embeddings(saveroot, t_index=t_index, prompt_ids=range(16), seed_ids=range(10), 
-                                                                                get_pos_neg_embeddings_func=get_pos_neg_embeddings_func, diffusion_pass=training_pass)
-            clf, boundary_vector, eval_dict = train_classifier_and_visualize(positive_embeddings, negative_embeddings, visualize=False, solver='liblinear')
-            pkl.dump({"classifier": clf, "boundary_vector": boundary_vector, "eval_dict": eval_dict}, 
-                    open(join(figdir, f"red_blue_8_relation_diff_t{t_index}_{annot_label}_classifier_{training_pass_str}.pkl"), 'wb'))
-            for prompt_idx in range(16):
-                figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=True, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
-                saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_relu_heatmap_{training_pass_str}", figh)
-                figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=False, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
-                saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_linear_heatmap_{training_pass_str}", figh)
-                plt.close("all")
+# seed = 0
+# for t_index in reversed(range(14)):
+#     for get_pos_neg_embeddings_func, annot_label in [
+#                         (get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
+#                         (get_obj_pos_others_neg, "obj_vs_others"),
+#                         (get_red_obj_pos_others_neg, "red_obj_vs_others"),
+#                         (get_triangle_pos_others_neg, "triangle_vs_others"), 
+#                         (get_circle_pos_others_neg, "circle_vs_others"),
+#                         # (get_top_obj_pos_others_neg, "topobj_vs_others"),
+#                         # (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
+#                                                     ]:
+#         for training_pass in [("cond",), ("uncond",), ("cond", "uncond")]:
+#             training_pass_str = "-".join(training_pass)+"Pass"
+#             positive_embeddings, negative_embeddings = collect_pos_neg_embeddings(saveroot, t_index=t_index, prompt_ids=range(16), seed_ids=range(10), 
+#                                                                                 get_pos_neg_embeddings_func=get_pos_neg_embeddings_func, diffusion_pass=training_pass)
+#             clf, boundary_vector, eval_dict = train_classifier_and_visualize(positive_embeddings, negative_embeddings, visualize=False, solver='liblinear')
+#             pkl.dump({"classifier": clf, "boundary_vector": boundary_vector, "eval_dict": eval_dict}, 
+#                     open(join(figdir, f"red_blue_8_relation_diff_t{t_index}_{annot_label}_classifier_{training_pass_str}.pkl"), 'wb'))
+#             for prompt_idx in range(16):
+#                 figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=True, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
+#                 saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_relu_heatmap_{training_pass_str}", figh)
+#                 figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=False, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
+#                 saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_linear_heatmap_{training_pass_str}", figh)
+#                 plt.close("all")
 
 
 #%%
+# vis_seed = 0
+import argparse
 
-seed = 0
-for t_index in reversed(range(14)):
+parser = argparse.ArgumentParser(description='Train classifiers on latent features')
+parser.add_argument('--layer_id', type=int, default=11,
+                    help='Layer ID to analyze (default: 11)')
+parser.add_argument('--t_start', type=int, default=0,
+                    help='Starting timestep index (default: 0)')
+parser.add_argument('--t_end', type=int, default=14,
+                    help='Ending timestep index, not included (default: 14)')
+
+args = parser.parse_args()
+
+layer_id = args.layer_id
+for t_index in reversed(range(args.t_start, args.t_end)):
     for get_pos_neg_embeddings_func, annot_label in [
-                        (get_bottom_obj_pos_others_neg, "bottomobj_vs_others"),
+                        (get_obj_pos_others_neg, "obj_vs_others"),
+                        (get_top_obj_pos_others_neg, "topobj_vs_others"),
+                        (get_bottom_obj_pos_others_neg, "bottomobj_vs_others"), 
+                        (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
+                        (get_triangle_pos_others_neg, "triangle_vs_others"),
+                        (get_circle_pos_others_neg, "circle_vs_others"),
                         (get_square_pos_others_neg, "square_vs_others"),
+                        (get_red_obj_pos_others_neg, "red_obj_vs_others"),
+                        (get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
                         (get_red_circle_pos_others_neg, "red_circle_vs_others"),
                         (get_red_square_pos_others_neg, "red_square_vs_others"),
                         (get_blue_obj_pos_others_neg, "blue_obj_vs_others"),
+                        (get_blue_triangle_pos_others_neg, "blue_triangle_vs_others"),
                         (get_blue_circle_pos_others_neg, "blue_circle_vs_others"),
                         (get_blue_square_pos_others_neg, "blue_square_vs_others"),
-                        (get_blue_triangle_pos_others_neg, "blue_triangle_vs_others"),
-                        # (get_obj_pos_others_neg, "obj_vs_others"),
-                        # (get_red_obj_pos_others_neg, "red_obj_vs_others"),
-                        # (get_triangle_pos_others_neg, "triangle_vs_others"), 
-                        # (get_red_triangle_pos_others_neg, "red_triangle_vs_others"),
-                        # (get_circle_pos_others_neg, "circle_vs_others"),
-                        # (get_top_obj_pos_others_neg, "topobj_vs_others"),
-                        # (get_top_obj_pos_bottom_obj_neg, "topobj_vs_bottomobj"),
                             ]:
         for training_pass in [("cond",), ("uncond",), ("cond", "uncond")]:
             training_pass_str = "-".join(training_pass)+"Pass"
-            positive_embeddings, negative_embeddings = collect_pos_neg_embeddings(saveroot, t_index=t_index, prompt_ids=range(16), seed_ids=range(10), 
+            positive_embeddings, negative_embeddings = collect_pos_neg_embeddings_layerwise(saveroot, t_index=t_index, prompt_ids=range(16), layer_id=layer_id, seed_ids=range(10),
                                                                                 get_pos_neg_embeddings_func=get_pos_neg_embeddings_func, diffusion_pass=training_pass)
-            clf, boundary_vector, eval_dict = train_classifier_and_visualize(positive_embeddings, negative_embeddings, 
+            clf, boundary_vector, eval_dict = train_classifier_and_visualize(positive_embeddings, negative_embeddings,
                                                     visualize=False, solver='liblinear', max_iter=100) # liblinear | lbfgs | saga
-            pkl.dump({"classifier": clf, "boundary_vector": boundary_vector, "eval_dict": eval_dict}, 
-                    open(join(figdir, f"red_blue_8_relation_diff_t{t_index}_{annot_label}_classifier_{training_pass_str}.pkl"), 'wb'))
-            # for prompt_idx in range(16):
-            #     figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=True, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
-            #     saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_relu_heatmap_{training_pass_str}", figh)
-            #     figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=seed, use_relu=False, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
-            #     saveallforms(figdir, f"red_blue_8_relation_diff_t{t_index}_prompt{prompt_idx}_seed{seed}_{annot_label}_linear_heatmap_{training_pass_str}", figh)
-            #     plt.close("all")
+            pkl.dump({"classifier": clf, "boundary_vector": boundary_vector, "eval_dict": eval_dict},
+                    open(join(figdir, f"red_blue_8_relation_diff_layer{layer_id}_t{t_index}_{annot_label}_classifier_{training_pass_str}.pkl"), 'wb'))
+                # for prompt_idx in range(16):
+                #     figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=vis_seed, use_relu=True, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
+                #     saveallforms(figdir, f"red_blue_8_relation_diff_layer{layer_id}_t{t_index}_prompt{prompt_idx}_seed{vis_seed}_{annot_label}_relu_heatmap_{training_pass_str}", figh)
+                #     figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=vis_seed, use_relu=False, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
+                #     saveallforms(figdir, f"red_blue_8_relation_diff_layer{layer_id}_t{t_index}_prompt{prompt_idx}_seed{vis_seed}_{annot_label}_linear_heatmap_{training_pass_str}", figh)
+                #     plt.close("all")
