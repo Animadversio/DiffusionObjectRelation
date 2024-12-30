@@ -282,3 +282,15 @@ def PixArt_B_2(**kwargs):
 @MODELS.register_module()
 def PixArt_S_2(**kwargs):
     return PixArt(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
+
+@MODELS.register_module()
+def PixArt_mini_2(**kwargs):
+    return PixArt(depth=6, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
+
+@MODELS.register_module()
+def PixArt_micro_2(**kwargs):
+    return PixArt(depth=6, hidden_size=192, patch_size=2, num_heads=3, **kwargs)
+
+@MODELS.register_module()
+def PixArt_nano_2(**kwargs):
+    return PixArt(depth=3, hidden_size=192, patch_size=2, num_heads=3, **kwargs)
