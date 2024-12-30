@@ -290,44 +290,6 @@ def get_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
 
 
 # %%
-# try to classify top (+) and down (-) objects
-def collect_pos_neg_embeddings(saveroot, t_index, prompt_ids, seed_ids=range(10), diffusion_pass=("cond",),
-                               get_pos_neg_embeddings_func=get_top_obj_pos_others_neg):
-    positive_embeddings = [] 
-    negative_embeddings = []
-    # 0,1,8,9 are the prompts that have above or below.
-    for prompt_idx in tqdm(prompt_ids):
-        for seed_idx in seed_ids:
-            latent_file = f"red_blue_8_pos_rndembposemb_img_latent_residual_prompt{prompt_idx}_seed{seed_idx}.pkl"
-            latent_path = os.path.join(saveroot, latent_file)
-            data = pickle.load(open(latent_path, 'rb'))
-            # data = torch.load(latent_path, map_location=torch.device('cpu'))
-            image_logs = data['image_logs']
-            batch_size = len(image_logs[0]['images'])
-            residual_state_traj = data['block_11_residual_spatial_state_traj']
-            for image_idx in range(batch_size):
-                obj_df, obj_masks = find_classify_object_masks(image_logs[0]['images'][image_idx])
-                if len(obj_df) != 2:
-                    continue
-                obj_masks_resized = [cv2.resize(obj_mask, (8, 8)) for obj_mask in obj_masks]
-                obj_masks_resized_binary = [obj_mask > positive_threshold for obj_mask in obj_masks_resized]
-                for which_pass in diffusion_pass:
-                    if which_pass == "cond":
-                        pos_embeddings, neg_embeddings = get_pos_neg_embeddings_func(residual_state_traj[t_index, batch_size + image_idx], 
-                                                                                        obj_df, obj_masks_resized_binary)
-                    elif which_pass == "uncond":
-                        pos_embeddings, neg_embeddings = get_pos_neg_embeddings_func(residual_state_traj[t_index, image_idx], 
-                                                                                        obj_df, obj_masks_resized_binary)
-                    else:
-                        raise ValueError(f"Invalid diffusion pass: {which_pass} (should be in ['cond', 'uncond'])")
-                    positive_embeddings.extend(pos_embeddings)
-                    negative_embeddings.extend(neg_embeddings)  
-
-    positive_embeddings = np.vstack(positive_embeddings)
-    negative_embeddings = np.vstack(negative_embeddings)
-    return positive_embeddings, negative_embeddings
-
-
 def collect_pos_neg_embeddings_layerwise(saveroot, t_index, prompt_ids, layer_id=11, seed_ids=range(10), diffusion_pass=("cond",),
                                get_pos_neg_embeddings_func=get_top_obj_pos_others_neg):
     positive_embeddings = [] 

@@ -172,7 +172,7 @@ def visualize_prompts_with_traj(pipeline, validation_prompts, prompt_cache_dir, 
     for prompt, image in zip(visualized_prompts, images):
         image = pipeline.image_processor.postprocess(image, output_type="pil")
         image_logs.append({"validation_prompt": prompt, "images": image})
-
+    
     return image_logs, latents_traj, pred_traj, t_traj
 
 
