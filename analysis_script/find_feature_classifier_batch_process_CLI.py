@@ -3,10 +3,6 @@
 # %% [markdown]
 # ## Read embeddings, extract token embedding based on contrastive classes
 # %%
-%load_ext autoreload
-%autoreload 2
-
-# %%
 import os
 from os.path import join
 import pickle
