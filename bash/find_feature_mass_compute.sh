@@ -4,8 +4,8 @@
 #SBATCH -c 16               # Number of cores (-c)
 #SBATCH --mem=50G           # Memory pool for all cores (see also --mem-per-cpu)
 #SBATCH --array 1-32
-#SBATCH -o pixart_mass_feat_finder_%A_%a.out  # File to which STDOUT will be written, %j inserts jobid
-#SBATCH -e pixart_mass_feat_finder_%A_%a.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH -o /n/home12/binxuwang/Github/DiffusionObjectRelation/cluster_logs/pixart_mass_feat_finder_%A_%a.out  # File to which STDOUT will be written, %j inserts jobid
+#SBATCH -e /n/home12/binxuwang/Github/DiffusionObjectRelation/cluster_logs/pixart_mass_feat_finder_%A_%a.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --mail-user=binxu_wang@hms.harvard.edu
 
 echo "$SLURM_ARRAY_TASK_ID"
