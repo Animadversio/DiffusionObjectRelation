@@ -292,3 +292,75 @@ def convert_checkpoint_to_diffusers_transformer(orig_ckpt_path, dump_path=None, 
         transformer.save_pretrained(os.path.join(dump_path, "transformer"))
     return transformer
 
+PixArt_model_configs = {
+    'PixArt_XL_2': {'depth': 28, 'hidden_size': 1152, 'patch_size': 2, 'num_heads': 16},
+    'PixArt_L_2': {'depth': 24, 'hidden_size': 768, 'patch_size': 2, 'num_heads': 12},
+    'PixArt_B_2': {'depth': 12, 'hidden_size': 768, 'patch_size': 2, 'num_heads': 12},
+    'PixArt_S_2': {'depth': 12, 'hidden_size': 384, 'patch_size': 2, 'num_heads': 6},
+}
+
+def construct_diffuser_transformer_from_config(config, transformer_params=None):
+    """
+    config: config object
+    transformer_params: dict, if None, use PixArt_model_configs[config.model]
+        should contain fields: depth, hidden_size, patch_size, num_heads
+    return: transformer object
+    """
+    if transformer_params is None:
+        transformer_params = PixArt_model_configs[config.model]
+    
+    weight_dtype = torch.float32
+    if config.mixed_precision == "fp16": # accelerator.
+        weight_dtype = torch.float16
+    elif config.mixed_precision == "bf16": # accelerator.
+        weight_dtype = torch.bfloat16
+        
+    image_size = config.image_size  # @param [256, 512, 1024]
+    latent_size = int(image_size) // 8
+    pred_sigma = getattr(config, 'pred_sigma', True)
+    learn_sigma = getattr(config, 'learn_sigma', True) and pred_sigma
+    model_kwargs={"window_block_indexes": config.window_block_indexes, "window_size": config.window_size,
+                    "use_rel_pos": config.use_rel_pos, "lewei_scale": config.lewei_scale, 'config':config,
+                    'model_max_length': config.model_max_length}
+
+    transformer = Transformer2DModel(
+            sample_size=image_size // 8,
+            num_layers=transformer_params['depth'],#len(model.blocks),
+            attention_head_dim=transformer_params['hidden_size'] // transformer_params['num_heads'],
+            in_channels=4,
+            out_channels=8 if learn_sigma else 4,
+            patch_size=transformer_params['patch_size'],
+            attention_bias=True,
+            num_attention_heads=transformer_params['num_heads'],
+            cross_attention_dim=transformer_params['hidden_size'],
+            activation_fn="gelu-approximate",
+            num_embeds_ada_norm=1000,
+            norm_type="ada_norm_single",
+            norm_elementwise_affine=False,
+            norm_eps=1e-6,
+            caption_channels=config.caption_channels,
+    )
+    return transformer
+
+from diffusers.pipelines.pixart_alpha import PixArtAlphaPipeline
+def construct_diffuser_pipeline_from_config(config, pipeline_class=PixArtAlphaPipeline):
+    """
+    config: config object
+    return: diffuser pipeline object
+    """
+    transformer = construct_diffuser_transformer_from_config(config)
+    
+    weight_dtype = torch.float32
+    if config.mixed_precision == "fp16": # accelerator.
+        weight_dtype = torch.float16
+    elif config.mixed_precision == "bf16": # accelerator.
+        weight_dtype = torch.bfloat16
+    
+    pipeline = pipeline_class.from_pretrained(
+        "PixArt-alpha/PixArt-XL-2-512x512",
+        transformer=transformer,
+        tokenizer=None,
+        text_encoder=None,
+        torch_dtype=weight_dtype,
+    )
+    return pipeline
