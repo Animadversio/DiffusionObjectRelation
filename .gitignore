@@ -11,3 +11,5 @@ PixArt-alpha/asset/*
 
 **/wandb/*
 sae_lens/checkpoints/*
+
+cluster_logs/*
