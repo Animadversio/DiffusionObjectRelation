@@ -83,6 +83,9 @@ for random_seed in trange(10):
                                                     visualize_prompts[prompt_idx:prompt_idx+1], new_prompt_cache_dir, 
                                                     max_length=config.model_max_length, weight_dtype=weight_dtype, 
                                                     num_images_per_prompt=25, random_seed=random_seed, device="cuda",)
+        latents_traj = [latents_trj.cpu() for latents_trj in latents_traj]
+        pred_traj = [pred_trj.cpu() for pred_trj in pred_traj]
+        t_traj = [[t.cpu() for t in t_traj[0]]]
         savedict = {"prompt": visualize_prompts[prompt_idx], 
                   "random_seed": random_seed,
                   "image_logs": image_logs,
