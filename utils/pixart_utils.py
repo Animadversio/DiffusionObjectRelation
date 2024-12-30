@@ -338,9 +338,12 @@ def construct_pixart_transformer_from_config(config, ):
 
 PixArt_model_configs = {
     'PixArt_XL_2': {'depth': 28, 'hidden_size': 1152, 'patch_size': 2, 'num_heads': 16},
-    'PixArt_L_2': {'depth': 24, 'hidden_size': 768, 'patch_size': 2, 'num_heads': 12},
+    'PixArt_L_2': {'depth': 24, 'hidden_size': 768, 'patch_size': 2, 'num_heads': 12}, 
     'PixArt_B_2': {'depth': 12, 'hidden_size': 768, 'patch_size': 2, 'num_heads': 12},
     'PixArt_S_2': {'depth': 12, 'hidden_size': 384, 'patch_size': 2, 'num_heads': 6},
+    'PixArt_mini_2':  {'depth': 6, 'hidden_size': 384, 'patch_size': 2, 'num_heads': 6},
+    'PixArt_micro_2': {'depth': 6, 'hidden_size': 192, 'patch_size': 2, 'num_heads': 3},
+    'PixArt_nano_2':  {'depth': 3, 'hidden_size': 192, 'patch_size': 2, 'num_heads': 3}
 }
 
 
