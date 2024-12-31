@@ -559,12 +559,16 @@ for t_index in reversed(range(args.t_start, args.t_end)):
                             ]:
         for training_pass in [("cond",), ("uncond",), ("cond", "uncond")]:
             training_pass_str = "-".join(training_pass)+"Pass"
+            savepath = join(figdir, f"red_blue_8_relation_diff_layer{layer_id}_t{t_index}_{annot_label}_classifier_{training_pass_str}.pkl")
+            if os.path.exists(savepath):
+                print(f"Skipping {savepath} because it already exists")
+                continue
             positive_embeddings, negative_embeddings = collect_pos_neg_embeddings_layerwise(saveroot, t_index=t_index, prompt_ids=range(16), layer_id=layer_id, seed_ids=range(10),
                                                                                 get_pos_neg_embeddings_func=get_pos_neg_embeddings_func, diffusion_pass=training_pass)
             clf, boundary_vector, eval_dict = train_classifier_and_visualize(positive_embeddings, negative_embeddings,
                                                     visualize=False, solver='liblinear', max_iter=100) # liblinear | lbfgs | saga
             pkl.dump({"classifier": clf, "boundary_vector": boundary_vector, "eval_dict": eval_dict},
-                    open(join(figdir, f"red_blue_8_relation_diff_layer{layer_id}_t{t_index}_{annot_label}_classifier_{training_pass_str}.pkl"), 'wb'))
+                    open(savepath, 'wb'))
                 # for prompt_idx in range(16):
                 #     figh = visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index=t_index, prompt_idx=prompt_idx, seed_idx=vis_seed, use_relu=True, title_str=f"Claissifier {annot_label} {training_pass_str} pass")
                 #     saveallforms(figdir, f"red_blue_8_relation_diff_layer{layer_id}_t{t_index}_prompt{prompt_idx}_seed{vis_seed}_{annot_label}_relu_heatmap_{training_pass_str}", figh)
