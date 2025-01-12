@@ -13,3 +13,4 @@ PixArt-alpha/asset/*
 sae_lens/checkpoints/*
 
 cluster_logs/*
+**/diffusers/
