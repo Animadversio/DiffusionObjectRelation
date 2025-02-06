@@ -211,6 +211,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         use_resolution_binning: bool = True,
         max_sequence_length: int = 120,
         return_sample_pred_traj: bool = False,
+        device: str = "cuda",
         **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         """
@@ -332,7 +333,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         else:
             batch_size = prompt_embeds.shape[0]
 
-        device = self._execution_device
+        device = device # self._execution_device
 
         # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
         # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
