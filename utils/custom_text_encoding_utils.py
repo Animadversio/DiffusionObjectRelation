@@ -192,3 +192,13 @@ def save_prompt_embeddings_randemb(tokenizer, text_encoder, validation_prompts, 
     del tokenizer, text_encoder
     torch.cuda.empty_cache()
     return result_col
+
+
+def tokenize_embed_prompt(prompt, tokenizer, text_encoder, max_length=20, device="cuda"):
+    uncond = tokenizer("", max_length=max_length, padding="max_length", truncation=True, return_tensors="pt").to(device)
+    uncond_prompt_embeds = text_encoder(uncond.input_ids, attention_mask=uncond.attention_mask)[0]
+    uncond_result = {'caption_embeds': uncond_prompt_embeds, 'emb_mask': uncond.attention_mask, 'prompt': '', 'token_ids': uncond.input_ids}
+    caption_token = tokenizer(prompt, max_length=max_length, padding="max_length", truncation=True, return_tensors="pt").to(device)
+    caption_emb = text_encoder(caption_token.input_ids, attention_mask=caption_token.attention_mask)[0]
+    cond_result = {'caption_embeds': caption_emb, 'emb_mask': caption_token.attention_mask, 'prompt': prompt, 'token_ids': caption_token.input_ids}
+    return uncond_result, cond_result

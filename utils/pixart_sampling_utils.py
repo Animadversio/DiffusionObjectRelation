@@ -333,7 +333,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         else:
             batch_size = prompt_embeds.shape[0]
 
-        device = device # self._execution_device
+        device = self._execution_device
 
         # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
         # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
@@ -486,3 +486,90 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         if return_sample_pred_traj:
             return ImagePipelineOutput(images=image), pred_traj, latents_traj, t_traj
         return ImagePipelineOutput(images=image)
+
+
+@torch.inference_mode()
+def visualize_prompts_with_traj_from_embed_dict(pipeline, uncond_prompt_dict, cond_prompt_dict, weight_dtype=torch.float16,
+                   num_inference_steps=14, guidance_scale=4.5, num_images_per_prompt=25, device="cuda", random_seed=0):
+    # logger.info("Running validation... ")
+    # device = accelerator.device
+    # model = accelerator.unwrap_model(model)
+    pipeline = pipeline.to(device)
+    pipeline.set_progress_bar_config(disable=True)
+    if random_seed is None:
+        generator = None
+    else:
+        generator = torch.Generator(device=device).manual_seed(random_seed)
+    image_logs = []
+    images = []
+    latents = []
+    pred_traj = []
+    latents_traj = []
+    t_traj = []
+    visualized_prompts = []
+    # uncond_data = torch.load(f'{prompt_cache_dir}/uncond_{max_length}token.pth', map_location='cpu')
+    uncond_prompt_embeds = uncond_prompt_dict['caption_embeds'].to(device)
+    uncond_prompt_attention_mask = uncond_prompt_dict['emb_mask'].to(device)
+    # for _, prompt in enumerate(validation_prompts):
+    caption_embs = cond_prompt_dict['caption_embeds'].to(device)
+    emb_masks = cond_prompt_dict['emb_mask'].to(device)
+    output = pipeline(
+        num_inference_steps=num_inference_steps,
+        num_images_per_prompt=num_images_per_prompt,
+        generator=generator,
+        guidance_scale=guidance_scale,
+        prompt_embeds=caption_embs,
+        prompt_attention_mask=emb_masks,
+        negative_prompt=None,
+        negative_prompt_embeds=uncond_prompt_embeds,
+        negative_prompt_attention_mask=uncond_prompt_attention_mask,
+        use_resolution_binning=False, # need this for smaller images like ours. 
+        return_sample_pred_traj=True,
+        output_type="latent",
+    )
+    latents.append(output[0].images)
+    pred_traj.append(output[1])
+    latents_traj.append(output[2])
+    t_traj.append(output[3])
+    visualized_prompts.append(prompt)
+    # flush()
+    for latent in latents:
+        images.append(pipeline.vae.decode(latent.to(weight_dtype) / pipeline.vae.config.scaling_factor, return_dict=False)[0])
+    for prompt, image in zip(visualized_prompts, images):
+        image = pipeline.image_processor.postprocess(image, output_type="pil")
+        image_logs.append({"validation_prompt": prompt, "images": image})
+    
+    return image_logs, latents_traj, pred_traj, t_traj
+
+
+@torch.inference_mode()
+def pipeline_inference_custom(pipeline, prompt, negative_prompt="", num_inference_steps=14, num_images_per_prompt=25, guidance_scale=4.5, random_seed=0, max_sequence_length=20, 
+                              return_sample_pred_traj=True, output_type="latent", device="cuda", weight_dtype=torch.float16, **kwargs):
+    pipeline = pipeline.to(device)
+    output = pipeline(prompt=prompt,
+         negative_prompt=negative_prompt,
+         num_inference_steps=num_inference_steps,
+         num_images_per_prompt=num_images_per_prompt,
+         generator=torch.Generator(device=device).manual_seed(random_seed),
+         guidance_scale=guidance_scale,
+         max_sequence_length=max_sequence_length,
+         use_resolution_binning=False,
+         return_sample_pred_traj=return_sample_pred_traj,
+         output_type=output_type,
+         **kwargs,
+    )
+    if return_sample_pred_traj:
+        latents = output[0].images
+        pred_traj = output[1]
+        latents_traj = output[2]
+        t_traj = output[3]
+    else:
+        latents = output.images
+        pred_traj = None
+        latents_traj = None
+        t_traj = None
+    images = pipeline.vae.decode(latents.clone().to(weight_dtype) / pipeline.vae.config.scaling_factor, return_dict=False)[0]
+    image_logs = []
+    images = pipeline.image_processor.postprocess(images, output_type="pil")
+    image_logs.append({"validation_prompt": prompt, "images": images})
+    return image_logs, pred_traj, latents_traj, t_traj
