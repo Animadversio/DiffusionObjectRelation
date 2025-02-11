@@ -120,6 +120,13 @@ class AttnProcessor2_0_Store:
         hidden_states, attention_probs = scaled_dot_product_attention(
             query, key, value, attn_mask=attention_mask, dropout_p=0.0, is_causal=False
         )
+        # print(attention_probs.shape, torch.isnan(attention_probs).any())
+        # TODO: fix the overflow problem when using fp16, currently no problem with fp32 but fp16 will have memory issue. 
+        # hidden_states, attention_probs = scaled_dot_product_attention(
+        #     query.to(torch.float32), key.to(torch.float32), value.to(torch.float32), attn_mask=attention_mask, dropout_p=0.0, is_causal=False
+        # )
+        # # assert no nan in attention_probs
+        # assert not torch.isnan(attention_probs).any(), "Attention probabilities contain NaNs"
         self.attn_map = attention_probs
 
         hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
