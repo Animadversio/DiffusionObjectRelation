@@ -14,3 +14,4 @@ sae_lens/checkpoints/*
 
 cluster_logs/*
 **/diffusers/
+**/example_images/
