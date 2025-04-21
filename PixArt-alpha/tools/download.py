@@ -13,7 +13,7 @@ import os
 import argparse
 
 
-pretrained_models = {'PixArt-XL-2-512x512.pth', 'PixArt-XL-2-1024-MS.pth'}
+pretrained_models = {'PixArt-XL-2-512x512.pth'}
 vae_models = {
     'sd-vae-ft-ema/config.json',
     'sd-vae-ft-ema/diffusion_pytorch_model.bin'
@@ -71,9 +71,9 @@ if __name__ == "__main__":
 
     # Download PixArt checkpoints
     for t5_model in t5_models:
-        download_other(t5_model, t5_models, '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts')
+        download_other(t5_model, t5_models, '/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/PixArt-alpha/output/pretrained_models/t5_ckpts')
     for vae_model in vae_models:
-        download_other(vae_model, vae_models, '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/')
+        download_other(vae_model, vae_models, '/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/PixArt-alpha/output/pretrained_models/')
     for model in model_names:
         download_model(model)    # for vae_model in vae_models:
     print('Done.')

@@ -15,3 +15,6 @@ sae_lens/checkpoints/*
 cluster_logs/*
 **/diffusers/
 **/example_images/
+**/output/
+**/samples/
+**/expert_weights/

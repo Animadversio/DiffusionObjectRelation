@@ -23,17 +23,17 @@ from diffusion.data.datasets import get_chunks, ASPECT_RATIO_512_TEST, ASPECT_RA
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_size', default=1024, type=int)
-    parser.add_argument('--t5_path', default='output/pretrained_models/t5_ckpts', type=str)
-    parser.add_argument('--tokenizer_path', default='output/pretrained_models/sd-vae-ft-ema', type=str)
-    parser.add_argument('--txt_file', default='asset/samples.txt', type=str)
-    parser.add_argument('--model_path', default='output/pretrained_models/PixArt-XL-2-1024x1024.pth', type=str)
-    parser.add_argument('--bs', default=1, type=int)
+    parser.add_argument('--image_size', default=512, type=int)
+    parser.add_argument('--t5_path', default='../output/pretrained_models/t5_ckpts', type=str)
+    parser.add_argument('--tokenizer_path', default='../output/pretrained_models/sd-vae-ft-ema', type=str)
+    parser.add_argument('--txt_file', default='../asset/spatial.txt', type=str)
+    parser.add_argument('--model_path', default='../output/pretrained_models/PixArt-XL-2-512x512.pth', type=str)
+    parser.add_argument('--bs', default=8, type=int)
     parser.add_argument('--cfg_scale', default=4.5, type=float)
     parser.add_argument('--sampling_algo', default='dpm-solver', type=str, choices=['iddpm', 'dpm-solver', 'sa-solver'])
-    parser.add_argument('--seed', default=0, type=int)
+    parser.add_argument('--seed', default=1, type=int)
     parser.add_argument('--dataset', default='custom', type=str)
-    parser.add_argument('--step', default=-1, type=int)
+    parser.add_argument('--step', default=14, type=int)
     parser.add_argument('--save_name', default='test_sample', type=str)
 
     return parser.parse_args()
@@ -49,6 +49,9 @@ def set_env(seed=0):
 @torch.inference_mode()
 def visualize(items, bs, sample_steps, cfg_scale):
 
+    # Add a counter for image numbering
+    image_counter = 0
+    
     for chunk in tqdm(list(get_chunks(items, bs)), unit='batch'):
 
         prompts = []
@@ -125,7 +128,14 @@ def visualize(items, bs, sample_steps, cfg_scale):
         # Save images:
         os.umask(0o000)  # file permission: 666; dir permission: 777
         for i, sample in enumerate(samples):
-            save_path = os.path.join(save_root, f"{prompts[i][:100]}.jpg")
+            # Increment counter for each image
+            image_counter += 1
+            
+            # Create 6-digit suffix with leading zeros
+            suffix = f"_{image_counter:06d}"
+            
+            # Create filename with the suffix and .png extension
+            save_path = os.path.join(save_root, f"{prompts[i][:100]}{suffix}.png")
             print("Saving path: ", save_path)
             save_image(sample, save_path, nrow=1, normalize=True, value_range=(-1, 1))
 
@@ -143,7 +153,7 @@ if __name__ == '__main__':
     lewei_scale = {512: 1, 1024: 2}     # trick for positional embedding interpolation
     sample_steps_dict = {'iddpm': 100, 'dpm-solver': 20, 'sa-solver': 25}
     sample_steps = args.step if args.step != -1 else sample_steps_dict[args.sampling_algo]
-    weight_dtype = torch.float16
+    weight_dtype = torch.bfloat16
     print(f"Inference with {weight_dtype}")
 
     # model setting
