@@ -20,7 +20,7 @@ class Dataset(Dataset):
         self.transform = transform
         data_folders = glob.glob(f'{data_path}/*/')
 
-        data_images = os.path.join(data_path, "samples", "original")
+        data_images = os.path.join(data_path, "samples", "PixArt-XL-2-512x512_spatial_prompts")
         data_imgs = os.listdir(data_images)
         data_imgs.sort(key=lambda x: int(x.split("_")[1].split('.')[0]))  # sort according to file number
         self.data_list = [os.path.join(data_images,data) for data in data_imgs]
