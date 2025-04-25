@@ -1,4 +1,3 @@
-
 import os
 
 import torch
@@ -145,6 +144,7 @@ def main():
     with torch.no_grad():
         result = []
         map_result = []
+        detailed_scores = []  # New list to store detailed score breakdowns
         for i, test_data in enumerate(tqdm(data_loader)):
             test_pred = model(test_data)
             for k in range(len(test_pred)):
@@ -230,6 +230,23 @@ def main():
                     obj1 = "person"
                 if obj2 in person:
                     obj2 = "person"
+                
+                # Initialize detailed score dictionary
+                detailed_score_dict = {
+                    'question_id': int(img_path_split[-1].split('_')[-1].split('.')[0]),
+                    'image': img_path_split[-1],
+                    'prompt': prompt,
+                    'locality': locality,
+                    'obj1': obj1,
+                    'obj2': obj2,
+                    'obj1_detected': obj1 in obj,
+                    'obj2_detected': obj2 in obj,
+                    'obj1_confidence': 0,
+                    'obj2_confidence': 0,
+                    'spatial_relationship_score': 0,
+                    'final_score': 0
+                }
+                
                 if obj1 in obj and obj2 in obj:
                     obj1_pos = obj.index(obj1)
                     obj2_pos = obj.index(obj2)
@@ -246,19 +263,37 @@ def main():
                     box2["x_max"] = obj2_bb[2]
                     box2["y_max"] = obj2_bb[3]
 
-
-                    score = 0.25 * instance_score[obj1_pos].item() + 0.25 * instance_score[obj2_pos].item()  # score = avg across two objects score
-                    score += determine_position(locality, box1, box2) / 2
+                    obj1_confidence = instance_score[obj1_pos].item()
+                    obj2_confidence = instance_score[obj2_pos].item()
+                    spatial_score = determine_position(locality, box1, box2)
+                    
+                    # Store individual scores
+                    detailed_score_dict['obj1_confidence'] = obj1_confidence
+                    detailed_score_dict['obj2_confidence'] = obj2_confidence
+                    detailed_score_dict['spatial_relationship_score'] = spatial_score
+                    
+                    # Calculate combined score
+                    score = 0.25 * obj1_confidence + 0.25 * obj2_confidence  # score = avg across two objects score
+                    score += spatial_score / 2
                 elif obj1 in obj:
-                    obj1_pos = obj.index(obj1)  
-                    score = 0.25 * instance_score[obj1_pos].item()
+                    obj1_pos = obj.index(obj1)
+                    obj1_confidence = instance_score[obj1_pos].item()
+                    detailed_score_dict['obj1_confidence'] = obj1_confidence
+                    score = 0.25 * obj1_confidence
                 elif obj2 in obj:
                     obj2_pos = obj.index(obj2)
-                    score = 0.25 * instance_score[obj2_pos].item()
+                    obj2_confidence = instance_score[obj2_pos].item()
+                    detailed_score_dict['obj2_confidence'] = obj2_confidence
+                    score = 0.25 * obj2_confidence
                 else:
                     score = 0
+                
+                # Apply threshold
                 if (score<0.5):
                     score=0
+                
+                detailed_score_dict['final_score'] = score
+                detailed_scores.append(detailed_score_dict)
 
                 image_dict = {}
                 image_dict['question_id']=int(img_path_split[-1].split('_')[-1].split('.')[0])
@@ -278,6 +313,11 @@ def main():
         with open(os.path.join(im_save_path, 'vqa_result.json'), 'w') as f:
             json.dump(result, f)
         print('vqa result saved in {}'.format(im_save_path))
+        
+        # Save detailed scores as a new JSON file
+        with open(os.path.join(im_save_path, 'detailed_scores.json'), 'w') as f:
+            json.dump(detailed_scores, f)
+        print('detailed scores saved in {}'.format(os.path.join(im_save_path, 'detailed_scores.json')))
 
         # avg score
         avg_score = 0
