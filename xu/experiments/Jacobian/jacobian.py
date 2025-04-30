@@ -643,7 +643,7 @@ for prompt_idx in range(len(validation_prompts)):
                         axes[i, j].axis('off')
                         
             fig.tight_layout()
-            fig.savefig(f"/n/home13/xupan/holylabs/Binxu/xu/Jacobian_figures/{validation_prompts[prompt_idx]}_seed_{random_seed}_xy_{x}_{y}.png")
+            fig.savefig(f"/n/home13/xupan/sompolinsky_lab/object_relation/Jacobian_figures/{validation_prompts[prompt_idx]}_seed_{random_seed}_xy_{x}_{y}.png")
             print(f"Saved {validation_prompts[prompt_idx]}_seed_{random_seed}_xy_{x}_{y}.png")
             
             plt.close(fig)
