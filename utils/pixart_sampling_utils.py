@@ -175,6 +175,54 @@ def visualize_prompts_with_traj(pipeline, validation_prompts, prompt_cache_dir, 
     
     return image_logs, latents_traj, pred_traj, t_traj
 
+@torch.inference_mode()
+def visualize_prompts_with_traj_pretrained(pipeline, validation_prompts, num_inference_steps=14, guidance_scale=4.5, 
+                                num_images_per_prompt=1, device=torch.device("cuda"), random_seed=0, weight_dtype=torch.bfloat16):
+
+    # Move pipeline to GPU (or multi-GPU)
+    pipeline.to(device)
+    pipeline.set_progress_bar_config(disable=True)
+
+    # Set up generator
+    if random_seed is None:
+        generator = None
+    else:
+        generator = torch.Generator(device=device).manual_seed(random_seed)
+    #image_logs = []
+    #print(generator.device.type)
+    image_logs, images, latents, pred_traj, latents_traj, t_traj, visualized_prompts = [], [], [], [], [], [], []
+
+    for prompt in validation_prompts:
+        # Run pipeline
+        output = pipeline(
+            prompt=prompt,
+            num_inference_steps=num_inference_steps,
+            num_images_per_prompt=num_images_per_prompt,
+            generator=generator,
+            guidance_scale=guidance_scale,
+            use_resolution_binning=False,
+            return_sample_pred_traj=True,
+            output_type="latent",
+            device=device,
+        )
+        # Store latents and trajectories
+        latents.append(output[0].images)
+        pred_traj.append(output[1])
+        latents_traj.append(output[2])
+        t_traj.append(output[3])
+        visualized_prompts.append(prompt)
+
+    for latent in latents:
+        images.append(pipeline.vae.decode(latent.to(weight_dtype) / pipeline.vae.config.scaling_factor, return_dict=False)[0])
+
+    # Postprocess images (small VRAM impact)
+    for prompt, image in zip(visualized_prompts, images):
+        image = pipeline.image_processor.postprocess(image, output_type="pil")
+        image_logs.append({"validation_prompt": prompt, "images": image})
+    print("Function execution complete!")
+    return image_logs, latents_traj, pred_traj, t_traj
+
+
 
 # subclass a new pipeline from PixArtAlphaPipeline
 from typing import Callable, List, Optional, Tuple, Union

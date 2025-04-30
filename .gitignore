@@ -18,3 +18,4 @@ cluster_logs/*
 **/output/
 **/samples/
 **/expert_weights/
+**/latents/
