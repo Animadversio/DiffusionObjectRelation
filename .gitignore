@@ -8,6 +8,7 @@
 visualizations/
 
 PixArt-alpha/asset/*
+PixArt-alpha/scripts/inference.sh
 
 **/wandb/*
 sae_lens/checkpoints/*
