@@ -109,10 +109,22 @@ def parse_args():
         help="Path to output score",
     )
     parser.add_argument(
+        "--data_path",
+        type=str,
+        default="/n/home13/xupan/sompolinsky_lab/object_relation/t2ibench_imgs/",
+        help="Path to input data",
+    )
+    parser.add_argument(
         "--complex",
         type=bool,
         default=False,
         help="Prompt is simple structure or in complex category",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=5,
+        help="Seed number for dataset path",
     )
     args = parser.parse_args()
     return args
@@ -125,11 +137,14 @@ def main():
 
     config = yaml.load(open('configs/experts.yaml', 'r'), Loader=yaml.Loader)
     outpath = args.outpath
-    data_path= outpath
-    save_path= f'{outpath}/labels'
+    data_path = args.data_path
+    
+    # Extract the folder name containing the seed number
+    folder_name = f"2025-05-06_custom_epochunknown_stepunknown_scale4.5_step14_size512_bs8_sampdpm-solver_seed{args.seed}"
+    save_path = f'{outpath}/labels/{folder_name}'
 
     batch_size = 64
-    dataset = Dataset(data_path,  transform)
+    dataset = Dataset(data_path, transform, args.seed)
     data_loader = torch.utils.data.DataLoader(
         dataset=dataset,
         batch_size=batch_size,
