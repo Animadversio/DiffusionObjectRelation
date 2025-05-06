@@ -34,7 +34,8 @@ def get_args():
     parser.add_argument('--seed', default=1, type=int)
     parser.add_argument('--dataset', default='custom', type=str)
     parser.add_argument('--step', default=14, type=int)
-    parser.add_argument('--save_name', default='test_sample', type=str)
+    parser.add_argument('--img_save_dir', default='/n/home13/xupan/sompolinsky_lab/object_relation/t2ibench_imgs/', type=str)
+    #parser.add_argument('--save_name', default='test_sample', type=str)
 
     return parser.parse_args()
 
@@ -174,8 +175,8 @@ if __name__ == '__main__':
 
     vae = AutoencoderKL.from_pretrained(args.tokenizer_path).to(device)
     t5 = T5Embedder(device="cuda", local_cache=True, cache_dir=args.t5_path, torch_dtype=torch.float)
-    work_dir = os.path.join(*args.model_path.split('/')[:-2])
-    work_dir = f'/{work_dir}' if args.model_path[0] == '/' else work_dir
+    #work_dir = os.path.join(*args.model_path.split('/')[:-2])
+    #work_dir = f'/{work_dir}' if args.model_path[0] == '/' else work_dir
 
     # data setting
     with open(args.txt_file, 'r') as f:
@@ -188,7 +189,8 @@ if __name__ == '__main__':
     except Exception:
         epoch_name = 'unknown'
         step_name = 'unknown'
-    img_save_dir = os.path.join(work_dir, 'vis')
+    #img_save_dir = os.path.join(work_dir, 'vis')
+    img_save_dir = args.img_save_dir
     os.umask(0o000)  # file permission: 666; dir permission: 777
     os.makedirs(img_save_dir, exist_ok=True)
 

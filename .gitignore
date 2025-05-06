@@ -19,3 +19,4 @@ cluster_logs/*
 **/samples/
 **/expert_weights/
 **/latents/
+**/sbatch_logs/*

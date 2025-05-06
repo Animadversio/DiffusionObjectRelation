@@ -26,7 +26,8 @@ import sys
 import json
 
 # Add project paths
-PROJECT_ROOT = "/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation"
+PROJECT_ROOT = "/n/home13/xupan/holylabs/DiffusionObjectRelation"
+sys.path.append(join(PROJECT_ROOT, "analysis_script"))
 sys.path.append(join(PROJECT_ROOT, "PixArt-alpha"))
 from diffusion import IDDPM
 from diffusion.data.builder import build_dataset, build_dataloader, set_data_root
@@ -90,6 +91,12 @@ def main(args):
     
     # Process each prompt
     for prompt_idx in range(len(visualize_prompts)):
+        # Check if file already exists
+        save_path = join(args.saveroot, f"spatial_img_latent_residual_allblocks_prompt{prompt_idx}_seed_{args.seed}.pkl")
+        if os.path.exists(save_path):
+            logging.info(f"Skipping prompt {prompt_idx + 1}/{len(visualize_prompts)} as it's already processed")
+            continue
+            
         logging.info(f"Processing prompt {prompt_idx + 1}/{len(visualize_prompts)}")
         fetcher.clean_activations()
         
@@ -131,7 +138,6 @@ def main(args):
                 savedict[f"block_{layer_idx}_residual_spatial_state_traj"] = residual_spatial_state_traj.detach().cpu()
             
             # Save results
-            save_path = join(args.saveroot, f"spatial_img_latent_residual_allblocks_prompt{prompt_idx}_seed_{args.seed}.pkl")
             pkl.dump(savedict, open(save_path, "wb"))
             logging.info(f"Saved results to {save_path}")
             
@@ -144,9 +150,9 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", type=str, default="PixArt-alpha/PixArt-XL-2-512x512",
                       help="Name of the pretrained model")
     parser.add_argument("--prompt_file", type=str,
-                      default="/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/PixArt-alpha/asset/spatial.txt",
+                      default="/n/home13/xupan/holylabs/DiffusionObjectRelation/PixArt-alpha/asset/spatial.txt",
                       help="Path to the text file containing prompts")
-    parser.add_argument("--saveroot", type=str, default="/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/pretrained/latents/",
+    parser.add_argument("--saveroot", type=str, default="/n/home13/xupan/sompolinsky_lab/object_relation/latents/",
                       help="Directory to save the results")
     parser.add_argument("--num_steps", type=int, default=14,
                       help="Number of inference steps")
