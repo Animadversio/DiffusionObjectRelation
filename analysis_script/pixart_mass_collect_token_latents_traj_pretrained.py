@@ -74,13 +74,17 @@ def main(args):
     visualize_prompts = load_prompts(args.prompt_file)
     
     # Load and filter prompts based on id_groups
-    with open(join(PROJECT_ROOT, "analysis_script/id_groups.json"), 'r') as f:
+    '''with open(join(PROJECT_ROOT, "analysis_script/id_groups.json"), 'r') as f:
         id_groups = json.load(f)
     selected_ids = id_groups['case2_ids'] + id_groups['case3_ids']
     selected_ids = [idx - 1 for idx in selected_ids]  # Convert to 0-based indexing
     visualize_prompts = [visualize_prompts[idx] for idx in selected_ids]
-    logging.info(f"Filtered prompts to {len(visualize_prompts)} prompts from case2 and case3")
+    logging.info(f"Filtered prompts to {len(visualize_prompts)} prompts from case2 and case3")'''
     
+    with open(join(PROJECT_ROOT, "analysis_script/filtered_qids.json"), 'r') as f:
+        filtered_qids = json.load(f)
+    visualize_prompts = [visualize_prompts[idx] for idx in filtered_qids]
+    logging.info(f"Filtered prompts to {len(visualize_prompts)} prompts from filtered_qids")
     # Setup feature fetcher
     fetcher = featureFetcher_module_recurrent()
     for layer_idx in range(28):
@@ -90,9 +94,11 @@ def main(args):
         )
     
     # Process each prompt
-    for prompt_idx in range(len(visualize_prompts)):
+    for prompt_idx, original_idx in enumerate(filtered_qids):
         # Check if file already exists
-        save_path = join(args.saveroot, f"spatial_img_latent_residual_allblocks_prompt{prompt_idx}_seed_{args.seed}.pkl")
+        save_path = join(args.saveroot, f"seed{args.seed}",f"spatial_img_latent_residual_allblocks_prompt_{original_idx}_seed_{args.seed}.pkl")
+        # Create seed-specific directory if it doesn't exist
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         if os.path.exists(save_path):
             logging.info(f"Skipping prompt {prompt_idx + 1}/{len(visualize_prompts)} as it's already processed")
             continue

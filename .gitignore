@@ -9,6 +9,7 @@ visualizations/
 
 PixArt-alpha/asset/*
 PixArt-alpha/scripts/inference.sh
+analysis_script/latents.sh
 T2I-CompBench-main/UniDet_eval/2D_spatial_eval.sh
 
 **/wandb/*
