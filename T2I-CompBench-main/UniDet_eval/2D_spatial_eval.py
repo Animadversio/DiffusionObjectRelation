@@ -123,7 +123,7 @@ def parse_args():
     parser.add_argument(
         "--seed",
         type=int,
-        default=5,
+        default=8,
         help="Seed number for dataset path",
     )
     args = parser.parse_args()
@@ -140,7 +140,7 @@ def main():
     data_path = args.data_path
     
     # Extract the folder name containing the seed number
-    folder_name = f"2025-05-06_custom_epochunknown_stepunknown_scale4.5_step14_size512_bs8_sampdpm-solver_seed{args.seed}"
+    folder_name = f"2025-05-10_custom_epochunknown_stepunknown_scale4.5_step14_size512_bs8_sampdpm-solver_seed{args.seed}"
     save_path = f'{outpath}/labels/{folder_name}'
 
     batch_size = 64

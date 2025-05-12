@@ -10,6 +10,7 @@ visualizations/
 PixArt-alpha/asset/*
 PixArt-alpha/scripts/inference.sh
 analysis_script/latents.sh
+analysis_script/latents_avg.sh
 T2I-CompBench-main/UniDet_eval/2D_spatial_eval.sh
 
 **/wandb/*
@@ -24,3 +25,6 @@ cluster_logs/*
 **/latents/
 **/sbatch_logs/*
 **/__pycache__/*
+**/mean_latents/*
+**/patch_heatmaps/*
+**/classifier_prep_latents/*
