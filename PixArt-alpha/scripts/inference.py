@@ -34,7 +34,7 @@ def get_args():
     parser.add_argument('--seed', default=1, type=int)
     parser.add_argument('--dataset', default='custom', type=str)
     parser.add_argument('--step', default=14, type=int)
-    parser.add_argument('--img_save_dir', default='/n/home13/xupan/sompolinsky_lab/object_relation/t2ibench_imgs/', type=str)
+    parser.add_argument('--img_save_dir', default='/n/home13/xupan/sompolinsky_lab/object_relation/t2ibench_imgs_with_intermediates/', type=str)
     #parser.add_argument('--save_name', default='test_sample', type=str)
 
     return parser.parse_args()
@@ -107,7 +107,7 @@ def visualize(items, bs, sample_steps, cfg_scale):
                     steps=sample_steps,
                     order=2,
                     skip_type="time_uniform",
-                    method="multistep",
+                    method="multistep"
                 )
             elif args.sampling_algo == 'sa-solver':
                 # Create sampling noise:
@@ -122,7 +122,7 @@ def visualize(items, bs, sample_steps, cfg_scale):
                     conditioning=caption_embs,
                     unconditional_conditioning=null_y,
                     unconditional_guidance_scale=cfg_scale,
-                    model_kwargs=model_kwargs,
+                    model_kwargs=model_kwargs
                 )[0]
         samples = vae.decode(samples / 0.18215).sample
         torch.cuda.empty_cache()

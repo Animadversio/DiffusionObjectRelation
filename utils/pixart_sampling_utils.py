@@ -260,6 +260,8 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         max_sequence_length: int = 120,
         return_sample_pred_traj: bool = False,
         device: str = "cuda",
+        inference_step_star: Optional[int] = None,
+        post_prompt_attention_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         """
@@ -335,6 +337,11 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
                 `ASPECT_RATIO_1024_BIN`. After the produced latents are decoded into images, they are resized back to
                 the requested resolution. Useful for generating non-square images.
             max_sequence_length (`int` defaults to 120): Maximum sequence length to use with the `prompt`.
+            inference_step_star (`int`, *optional*): The specific inference step at which to change
+                the `prompt_attention_mask`. Defaults to `None`, meaning no change.
+            post_prompt_attention_mask (`torch.Tensor`, *optional*): The new attention mask for the conditional
+                prompt to be used from `inference_step_star` onwards. Required if `inference_step_star` is set.
+                Should have the same shape as the original conditional prompt attention mask. Defaults to `None`.
 
         Examples:
 
@@ -372,7 +379,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
             prompt_attention_mask,
             negative_prompt_attention_mask,
         )
-
+        print(prompt_attention_mask.shape)
         # 2. Default height and width to transformer
         if prompt is not None and isinstance(prompt, str):
             batch_size = 1
@@ -407,9 +414,49 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
             clean_caption=clean_caption,
             max_sequence_length=max_sequence_length,
         )
+
+        if inference_step_star is not None and post_prompt_attention_mask is not None:
+            # Encode prompt for post operations
+            (
+                post_prompt_embeds,
+                # We use the user provided post_prompt_attention_mask
+                _,
+                post_negative_prompt_embeds,
+                post_negative_prompt_attention_mask,
+            ) = self.encode_prompt(
+                prompt, # Use the original prompt
+                do_classifier_free_guidance,
+                negative_prompt=negative_prompt, # Use the original negative prompt
+                num_images_per_prompt=num_images_per_prompt,
+                device=device,
+                # prompt_embeds and negative_prompt_embeds will be re-encoded
+                # prompt_attention_mask is provided by user as post_prompt_attention_mask
+                # negative_prompt_attention_mask will be re-encoded
+                clean_caption=clean_caption,
+                max_sequence_length=max_sequence_length,
+            )
+
+
+        # `prompt_embeds`, `prompt_attention_mask`, etc. now hold the results from `encode_prompt`.
+        uncond_mask_for_step_change = None # Initialize
         if do_classifier_free_guidance:
+            # Store the unconditional mask that came from encode_prompt before concatenation,
+            # as we'll need it if we change the conditional mask mid-process.
+            # At this point, negative_prompt_attention_mask is the one from encode_prompt.
+            uncond_mask_for_step_change = negative_prompt_attention_mask
+            
             prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds], dim=0)
             prompt_attention_mask = torch.cat([negative_prompt_attention_mask, prompt_attention_mask], dim=0)
+
+            if inference_step_star is not None and post_prompt_attention_mask is not None:
+                # Concatenate post embeddings and masks for CFG
+                post_prompt_embeds = torch.cat([post_negative_prompt_embeds, post_prompt_embeds], dim=0)
+                # The post_prompt_attention_mask is already the *conditional* mask.
+                # We need to combine it with the *unconditional* mask (post_negative_prompt_attention_mask).
+                post_prompt_attention_mask = torch.cat([post_negative_prompt_attention_mask, post_prompt_attention_mask], dim=0)
+
+        # Original print statements referred to prompt_embeds and prompt_attention_mask
+        # after potential concatenation for CFG.
         print(prompt_embeds.shape)
         print(prompt_attention_mask.shape)
         # 4. Prepare timesteps
@@ -473,11 +520,45 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
                 # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
                 current_timestep = current_timestep.expand(latent_model_input.shape[0])
 
+                # Determine which embeddings and mask to use
+                current_prompt_embeds = prompt_embeds
+                current_prompt_attention_mask = prompt_attention_mask
+
+                # Check if we need to update the attention mask
+                if inference_step_star is not None and \
+                   post_prompt_attention_mask is not None and \
+                   i >= inference_step_star: # Changed to >= to apply from inference_step_star onwards
+                    current_prompt_embeds = post_prompt_embeds
+                    if do_classifier_free_guidance:
+                        # Reconstruct the combined attention mask using the stored unconditional mask
+                        # and the new conditional mask.
+                        # if uncond_mask_for_step_change is None: # This check seems redundant now with post_negative_prompt_attention_mask
+                        #     # This should ideally not happen if do_classifier_free_guidance is True,
+                        #     # as uncond_mask_for_step_change should have been set.
+                        #     # Handling this defensively, though it might indicate a logic error if reached.
+                        #     print("Warning: uncond_mask_for_step_change is None during CFG mask update.")
+                        #     # Fallback to original combined mask if something went wrong, or error out.
+                        #     # For now, we proceed, but this part might need more robust error handling
+                        #     # or ensuring uncond_mask_for_step_change is always valid in CFG path.
+                        #     pass # current prompt_attention_mask remains unchanged this step if error
+                        # else:
+                        # prompt_attention_mask = torch.cat([uncond_mask_for_step_change, post_prompt_attention_mask], dim=0)
+                        current_prompt_attention_mask = post_prompt_attention_mask
+                        print(f"Step {i}: Using POST CFG prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
+                    else:
+                        # If not CFG, the new mask directly replaces the old one.
+                        # prompt_attention_mask = post_prompt_attention_mask
+                        current_prompt_attention_mask = post_prompt_attention_mask
+                        print(f"Step {i}: Using POST non-CFG prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
+                elif i < inference_step_star : # or the conditions for post are not met
+                     print(f"Step {i}: Using PRE prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
+
+
                 # predict noise model_output
                 noise_pred = self.transformer(
                     latent_model_input,
-                    encoder_hidden_states=prompt_embeds,
-                    encoder_attention_mask=prompt_attention_mask,
+                    encoder_hidden_states=current_prompt_embeds, # Use current_prompt_embeds
+                    encoder_attention_mask=current_prompt_attention_mask, # Use current_prompt_attention_mask
                     timestep=current_timestep,
                     added_cond_kwargs=added_cond_kwargs,
                     return_dict=False,
@@ -621,3 +702,80 @@ def pipeline_inference_custom(pipeline, prompt, negative_prompt="", num_inferenc
     images = pipeline.image_processor.postprocess(images, output_type="pil")
     image_logs.append({"validation_prompt": prompt, "images": images})
     return image_logs, pred_traj, latents_traj, t_traj
+
+@torch.inference_mode()
+def visualize_single_prompt_with_traj(pipeline, prompt, save_dir, num_inference_steps=14, guidance_scale=4.5, 
+                                    device=torch.device("cuda"), random_seed=0, weight_dtype=torch.float16):
+    """
+    Generate and save trajectory data for a single prompt.
+    
+    Args:
+        pipeline: The PixArt pipeline
+        prompt (str): The prompt to generate from
+        save_dir (str): Directory to save all outputs
+        num_inference_steps (int): Number of denoising steps
+        guidance_scale (float): Guidance scale for generation
+        device: Device to run generation on
+        random_seed (int): Random seed for reproducibility
+        weight_dtype: Data type for weights
+    
+    Returns:
+        None (saves all outputs to disk)
+    """
+    # Move pipeline to device
+    pipeline.to(device)
+    pipeline.set_progress_bar_config(disable=True)
+
+    # Set up generator
+    if random_seed is None:
+        generator = None
+    else:
+        generator = torch.Generator(device=device).manual_seed(random_seed)
+
+    # Create a valid filename from the prompt
+    filename_base = "".join(c if c.isalnum() else "_" for c in prompt)
+    
+    # Create subdirectories
+    subdirs = {
+        'image': os.path.join(save_dir, 'generated_image'),
+        'latents': os.path.join(save_dir, 'latents_traj'),
+        'pred': os.path.join(save_dir, 'pred_traj')
+    }
+    for subdir in subdirs.values():
+        os.makedirs(subdir, exist_ok=True)
+
+    # Run pipeline
+    output = pipeline(
+        prompt=prompt,
+        num_inference_steps=num_inference_steps,
+        num_images_per_prompt=1,  # Always 1 for this function
+        generator=generator,
+        guidance_scale=guidance_scale,
+        use_resolution_binning=False,
+        return_sample_pred_traj=True,
+        output_type="latent",
+        device=device,
+    )
+
+    # Extract outputs
+    latents = output[0].images
+    pred_traj = output[1]
+    latents_traj = output[2]
+    t_traj = output[3]
+
+    # Decode and save the final image
+    image = pipeline.vae.decode(latents.to(weight_dtype) / pipeline.vae.config.scaling_factor, return_dict=False)[0]
+    image = pipeline.image_processor.postprocess(image, output_type="pil")
+    image_path = os.path.join(subdirs['image'], f"{filename_base}.png")
+    image.save(image_path)
+    print(f"Generated image saved to: {image_path}")
+
+    # Save trajectory data
+    latents_path = os.path.join(subdirs['latents'], f"{filename_base}.pt")
+    pred_path = os.path.join(subdirs['pred'], f"{filename_base}.pt")
+    
+    torch.save(latents_traj, latents_path)
+    torch.save(pred_traj, pred_path)
+    
+    print(f"Latents trajectory saved to: {latents_path}")
+    print(f"Prediction trajectory saved to: {pred_path}")
