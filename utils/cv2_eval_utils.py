@@ -243,3 +243,122 @@ scene_info_collection = {'blue_triangle_is_above_red_triangle':  {"color1": "blu
                         'triangle_is_to_the_upper_left_of_square':  {"color1": None, "shape1": "Triangle", "color2": None, "shape2": "Square", "spatial_relationship": "upper_left"},
                         }
 
+
+import pandas as pd
+import numpy as np
+
+def color_score(detected_rgb, target_rgb):
+    max_dist = np.linalg.norm(np.array([255, 255, 255]))
+    dist = np.linalg.norm(detected_rgb - target_rgb)
+    return max(0, 1 - dist / max_dist)
+
+COLOR_NAME_TO_RGB = {
+    'red': np.array([255, 0, 0]),
+    'blue': np.array([0, 0, 255]),
+    'green': np.array([0, 255, 0]),
+    'yellow': np.array([255, 255, 0]),
+}
+
+# synonym mapping so "square" and "rectangle" are interchangeable
+SHAPE_SYNONYMS = {
+    'square': ['square', 'rectangle'],
+    'rectangle': ['rectangle', 'square']
+}
+
+def evaluate_alignment(prompt, df, color_map=COLOR_NAME_TO_RGB):
+    import re
+    # parse prompt
+    pattern = r'(\w+)\s+(\w+)\s+is\s+to\s+the\s+(left|right|above|below)\s+of\s+(\w+)\s+(\w+)'
+    m = re.match(pattern, prompt.lower())
+    if not m:
+        raise ValueError(f"Prompt '{prompt}' not in expected format")
+    color1, obj1, relation, color2, obj2 = m.groups()
+    
+    # 0) check shape existence with synonyms
+    shapes_lower = df['Shape'].str.lower()
+    def exists(target_shape):
+        return any(shapes_lower.isin(SHAPE_SYNONYMS.get(target_shape, [target_shape])))
+    shape_exists = {
+        obj1: exists(obj1),
+        obj2: exists(obj2)
+    }
+    shape_match = all(shape_exists.values())
+    
+    # prepare color arrays
+    df_copy = df.copy()
+    df_copy['color_array'] = df_copy['Color (RGB)'].apply(lambda x: np.array(x))
+    
+    # find matching row given synonyms
+    def get_row(target_shape):
+        possible = SHAPE_SYNONYMS.get(target_shape, [target_shape])
+        return df_copy[df_copy['Shape'].str.lower().isin(possible)].iloc[0]
+    
+    # 1) color1 + obj1 binding
+    if shape_exists[obj1]:
+        row1 = get_row(obj1)
+        score1 = color_score(row1['color_array'], color_map.get(color1, np.array([0,0,0])))
+        match1 = score1 > 0.5
+    else:
+        score1, match1 = 0.0, False
+    
+    # 2) color2 + obj2 binding
+    if shape_exists[obj2]:
+        row2 = get_row(obj2)
+        score2 = color_score(row2['color_array'], color_map.get(color2, np.array([0,0,0])))
+        match2 = score2 > 0.5
+    else:
+        score2, match2 = 0.0, False
+    
+    # 3) spatial_color_relation: check whether the red‐object centroid 
+    #    is left/above/etc of the blue‐object centroid – regardless of shape
+    # first, score every detected object by how close its RGB is to each prompt color
+    rel_map = {
+            'left':  (0, lambda a, b: a < b),
+            'right': (0, lambda a, b: a > b),
+            'above': (1, lambda a, b: a < b),
+            'below': (1, lambda a, b: a > b),
+        }
+    df_copy['score_c1'] = df_copy['color_array'].apply(lambda c: color_score(c, color_map[color1]))
+    df_copy['score_c2'] = df_copy['color_array'].apply(lambda c: color_score(c, color_map[color2]))
+    # pick the best‐matching objects by color
+    row_color1 = df_copy.loc[df_copy['score_c1'].idxmax()]
+    row_color2 = df_copy.loc[df_copy['score_c2'].idxmax()]
+    axis, cond = rel_map[relation]
+    spatial_color_relation = bool(cond(
+        row_color1['Center (x, y)'][axis],
+        row_color2['Center (x, y)'][axis]
+    ))
+
+    # 4) spatial_shape_relation: check whether the circle centroid 
+    #    is left/above/etc of the square centroid – regardless of color
+    if shape_exists[obj1] and shape_exists[obj2]:
+        # safe to call get_row now
+        row_shape1 = get_row(obj1)
+        row_shape2 = get_row(obj2)
+        spatial_shape_relation = bool(
+            cond(
+                row_shape1['Center (x, y)'][axis],
+                row_shape2['Center (x, y)'][axis]
+            )
+        )
+    else:
+        spatial_shape_relation = False
+    
+    # overall score
+    overall = (int(shape_match) + score1 + score2 + 
+               int(spatial_color_relation) + int(spatial_shape_relation)) / 5
+    
+    return {
+        'shape_exists':          shape_exists,
+        'shape_match':           shape_match,
+        'color_binding_scores':  {obj1: score1, obj2: score2},
+        'color_binding_match':   {obj1: match1, obj2: match2},
+        'spatial_color_relation':   spatial_color_relation,
+        'spatial_shape_relation':   spatial_shape_relation,
+        'overall_score':         overall
+    }
+
+
+
+#result = evaluate_alignment("red circle is to the left of blue square", df)
+#print(result)

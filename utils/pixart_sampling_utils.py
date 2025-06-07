@@ -229,6 +229,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline, ImagePipelineOutput
 from diffusers.pipelines.pixart_alpha.pipeline_pixart_alpha import retrieve_timesteps
 # from diffusers.pipelines.pixart_alpha import EXAMPLE_DOC_STRING, ImagePipelineOutput
+
 class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
     
     # @replace_example_docstring(EXAMPLE_DOC_STRING)
@@ -379,7 +380,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
             prompt_attention_mask,
             negative_prompt_attention_mask,
         )
-        print(prompt_attention_mask.shape)
+        #print(prompt_attention_mask.shape)
         # 2. Default height and width to transformer
         if prompt is not None and isinstance(prompt, str):
             batch_size = 1
@@ -394,7 +395,9 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
         # corresponds to doing no classifier free guidance.
         do_classifier_free_guidance = guidance_scale > 1.0
-
+        original_prompt_embeds = prompt_embeds
+        original_negative_prompt_embeds = negative_prompt_embeds
+        original_negative_prompt_attention_mask = negative_prompt_attention_mask
         # 3. Encode input prompt
         (
             prompt_embeds,
@@ -419,8 +422,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
             # Encode prompt for post operations
             (
                 post_prompt_embeds,
-                # We use the user provided post_prompt_attention_mask
-                _,
+                post_prompt_attention_mask,
                 post_negative_prompt_embeds,
                 post_negative_prompt_attention_mask,
             ) = self.encode_prompt(
@@ -429,9 +431,10 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
                 negative_prompt=negative_prompt, # Use the original negative prompt
                 num_images_per_prompt=num_images_per_prompt,
                 device=device,
-                # prompt_embeds and negative_prompt_embeds will be re-encoded
-                # prompt_attention_mask is provided by user as post_prompt_attention_mask
-                # negative_prompt_attention_mask will be re-encoded
+                prompt_embeds=original_prompt_embeds,
+                negative_prompt_embeds=original_negative_prompt_embeds,
+                prompt_attention_mask=post_prompt_attention_mask,
+                negative_prompt_attention_mask=original_negative_prompt_attention_mask,
                 clean_caption=clean_caption,
                 max_sequence_length=max_sequence_length,
             )
@@ -525,36 +528,30 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
                 current_prompt_attention_mask = prompt_attention_mask
 
                 # Check if we need to update the attention mask
-                if inference_step_star is not None and \
-                   post_prompt_attention_mask is not None and \
-                   i >= inference_step_star: # Changed to >= to apply from inference_step_star onwards
-                    current_prompt_embeds = post_prompt_embeds
-                    if do_classifier_free_guidance:
-                        # Reconstruct the combined attention mask using the stored unconditional mask
-                        # and the new conditional mask.
-                        # if uncond_mask_for_step_change is None: # This check seems redundant now with post_negative_prompt_attention_mask
-                        #     # This should ideally not happen if do_classifier_free_guidance is True,
-                        #     # as uncond_mask_for_step_change should have been set.
-                        #     # Handling this defensively, though it might indicate a logic error if reached.
-                        #     print("Warning: uncond_mask_for_step_change is None during CFG mask update.")
-                        #     # Fallback to original combined mask if something went wrong, or error out.
-                        #     # For now, we proceed, but this part might need more robust error handling
-                        #     # or ensuring uncond_mask_for_step_change is always valid in CFG path.
-                        #     pass # current prompt_attention_mask remains unchanged this step if error
-                        # else:
-                        # prompt_attention_mask = torch.cat([uncond_mask_for_step_change, post_prompt_attention_mask], dim=0)
+                if inference_step_star is not None and post_prompt_attention_mask is not None:
+                    if i >= inference_step_star: 
+                        current_prompt_embeds = post_prompt_embeds
+                    
                         current_prompt_attention_mask = post_prompt_attention_mask
-                        print(f"Step {i}: Using POST CFG prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
-                    else:
-                        # If not CFG, the new mask directly replaces the old one.
-                        # prompt_attention_mask = post_prompt_attention_mask
-                        current_prompt_attention_mask = post_prompt_attention_mask
-                        print(f"Step {i}: Using POST non-CFG prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
-                elif i < inference_step_star : # or the conditions for post are not met
-                     print(f"Step {i}: Using PRE prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
+                        print(f"Step {i}: Using POST prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
+                    
+                    elif i < inference_step_star : # or the conditions for post are not met
+                        print(f"Step {i}: Using PRE prompt_attention_mask shape: {current_prompt_attention_mask.shape}")
 
 
                 # predict noise model_output
+                #print(current_prompt_attention_mask)
+                
+                # if i >= inference_step_star:
+                #     noise_pred = self.transformer(
+                #         latent_model_input,
+                #         encoder_hidden_states=torch.zeros_like(current_prompt_embeds), # Use current_prompt_embeds
+                #         encoder_attention_mask=current_prompt_attention_mask, # Use current_prompt_attention_mask
+                #         timestep=current_timestep,
+                #         added_cond_kwargs=added_cond_kwargs,
+                #         return_dict=False,
+                #     )[0]
+                # else:
                 noise_pred = self.transformer(
                     latent_model_input,
                     encoder_hidden_states=current_prompt_embeds, # Use current_prompt_embeds
