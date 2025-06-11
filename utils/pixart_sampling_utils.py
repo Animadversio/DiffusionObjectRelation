@@ -108,24 +108,7 @@ def visualize_prompts_with_traj(pipeline, validation_prompts, prompt_cache_dir, 
     # logger.info("Running validation... ")
     # device = accelerator.device
     # model = accelerator.unwrap_model(model)
-    if validation_prompts is None:
-        validation_prompts = [
-            "triangle is to the upper left of square", 
-            "blue triangle is to the upper left of red square", 
-            "triangle is above and to the right of square", 
-            "blue circle is above and to the right of blue square", 
-            "triangle is to the left of square", 
-            "triangle is to the left of triangle", 
-            "circle is below red square",
-            "red circle is to the left of blue square",
-            "blue square is to the right of red circle",
-            "red circle is above square",
-            "triangle is above red circle",
-            "red is above blue",
-            "red is to the left of red",
-            "blue triangle is above red triangle", 
-            "blue circle is above blue square", 
-        ]
+ 
     pipeline = pipeline.to(device)
     pipeline.set_progress_bar_config(disable=True)
     if random_seed is None:
@@ -138,29 +121,27 @@ def visualize_prompts_with_traj(pipeline, validation_prompts, prompt_cache_dir, 
     pred_traj = []
     latents_traj = []
     t_traj = []
-    uncond_data = torch.load(f'{prompt_cache_dir}/uncond_{max_length}token.pth', map_location='cpu')
-    uncond_prompt_embeds = uncond_data['caption_embeds'].to(device)
-    uncond_prompt_attention_mask = uncond_data['emb_mask'].to(device)
+    # uncond_data = torch.load(f'{prompt_cache_dir}/uncond_{max_length}token.pth', map_location='cpu')
+    # uncond_prompt_embeds = uncond_data['caption_embeds'].to(device)
+    # uncond_prompt_attention_mask = uncond_data['emb_mask'].to(device)
     visualized_prompts = []
     for _, prompt in enumerate(validation_prompts):
-        if not os.path.exists(f'{prompt_cache_dir}/{prompt}_{max_length}token.pth'):
-            continue
-        embed = torch.load(f'{prompt_cache_dir}/{prompt}_{max_length}token.pth', map_location='cpu')
-        caption_embs, emb_masks = embed['caption_embeds'].to(device), embed['emb_mask'].to(device)
         output = pipeline(
-            num_inference_steps=num_inference_steps,
-            num_images_per_prompt=num_images_per_prompt,
-            generator=generator,
-            guidance_scale=guidance_scale,
-            prompt_embeds=caption_embs,
-            prompt_attention_mask=emb_masks,
-            negative_prompt=None,
-            negative_prompt_embeds=uncond_prompt_embeds,
-            negative_prompt_attention_mask=uncond_prompt_attention_mask,
-            use_resolution_binning=False, # need this for smaller images like ours. 
-            return_sample_pred_traj=True,
-            output_type="latent",
-        )
+        prompt=prompt,
+        num_inference_steps=num_inference_steps,
+        num_images_per_prompt=num_images_per_prompt,
+        generator=generator,
+        guidance_scale=guidance_scale,
+        prompt_embeds=None,
+        prompt_attention_mask=None,
+        negative_prompt="",
+        negative_prompt_embeds=None,
+        negative_prompt_attention_mask=None,
+        use_resolution_binning=False,
+        max_sequence_length=max_length,
+        return_sample_pred_traj=True,
+        output_type="latent",
+    )
         latents.append(output[0].images)
         pred_traj.append(output[1])
         latents_traj.append(output[2])
@@ -700,79 +681,5 @@ def pipeline_inference_custom(pipeline, prompt, negative_prompt="", num_inferenc
     image_logs.append({"validation_prompt": prompt, "images": images})
     return image_logs, pred_traj, latents_traj, t_traj
 
-@torch.inference_mode()
-def visualize_single_prompt_with_traj(pipeline, prompt, save_dir, num_inference_steps=14, guidance_scale=4.5, 
-                                    device=torch.device("cuda"), random_seed=0, weight_dtype=torch.float16):
-    """
-    Generate and save trajectory data for a single prompt.
-    
-    Args:
-        pipeline: The PixArt pipeline
-        prompt (str): The prompt to generate from
-        save_dir (str): Directory to save all outputs
-        num_inference_steps (int): Number of denoising steps
-        guidance_scale (float): Guidance scale for generation
-        device: Device to run generation on
-        random_seed (int): Random seed for reproducibility
-        weight_dtype: Data type for weights
-    
-    Returns:
-        None (saves all outputs to disk)
-    """
-    # Move pipeline to device
-    pipeline.to(device)
-    pipeline.set_progress_bar_config(disable=True)
 
-    # Set up generator
-    if random_seed is None:
-        generator = None
-    else:
-        generator = torch.Generator(device=device).manual_seed(random_seed)
 
-    # Create a valid filename from the prompt
-    filename_base = "".join(c if c.isalnum() else "_" for c in prompt)
-    
-    # Create subdirectories
-    subdirs = {
-        'image': os.path.join(save_dir, 'generated_image'),
-        'latents': os.path.join(save_dir, 'latents_traj'),
-        'pred': os.path.join(save_dir, 'pred_traj')
-    }
-    for subdir in subdirs.values():
-        os.makedirs(subdir, exist_ok=True)
-
-    # Run pipeline
-    output = pipeline(
-        prompt=prompt,
-        num_inference_steps=num_inference_steps,
-        num_images_per_prompt=1,  # Always 1 for this function
-        generator=generator,
-        guidance_scale=guidance_scale,
-        use_resolution_binning=False,
-        return_sample_pred_traj=True,
-        output_type="latent",
-        device=device,
-    )
-
-    # Extract outputs
-    latents = output[0].images
-    pred_traj = output[1]
-    latents_traj = output[2]
-    t_traj = output[3]
-
-    # Decode and save the final image
-    image = pipeline.vae.decode(latents.to(weight_dtype) / pipeline.vae.config.scaling_factor, return_dict=False)[0]
-    image = pipeline.image_processor.postprocess(image, output_type="pil")
-    image_path = os.path.join(subdirs['image'], f"{filename_base}.png")
-    image.save(image_path)
-    print(f"Generated image saved to: {image_path}")
-
-    # Save trajectory data
-    latents_path = os.path.join(subdirs['latents'], f"{filename_base}.pt")
-    pred_path = os.path.join(subdirs['pred'], f"{filename_base}.pt")
-    
-    torch.save(latents_traj, latents_path)
-    torch.save(pred_traj, pred_path)
-    
-    print(f"Latents trajectory saved to: {latents_path}")
-    print(f"Prediction trajectory saved to: {pred_path}")

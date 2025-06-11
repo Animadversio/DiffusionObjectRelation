@@ -55,6 +55,33 @@ def get_right_obj_pos_left_obj_neg(latent_state, obj_df, objeect_masks):
         negative_embeddings = latent_state[objeect_masks[0], :].numpy()
     return [positive_embeddings], [negative_embeddings]
 
+def get_left_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Left object is positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    if obj_df.iloc[0]['Center (x, y)'][0] < obj_df.iloc[1]['Center (x, y)'][0]:
+        positive_embeddings = latent_state[objeect_masks[0], :].numpy()
+        negative_embeddings = latent_state[~objeect_masks[0], :].numpy()
+    else:
+        positive_embeddings = latent_state[objeect_masks[1], :].numpy()
+        negative_embeddings = latent_state[~objeect_masks[1], :].numpy()
+    return [positive_embeddings], [negative_embeddings]
+
+def get_right_obj_pos_others_neg(latent_state, obj_df, objeect_masks):
+    """
+    Right object is positive, others are negative including background. 
+    """
+    if len(obj_df) != 2:
+        return np.empty([0, latent_state.shape[-1]]), np.empty([0, latent_state.shape[-1]])
+    if obj_df.iloc[0]['Center (x, y)'][0] > obj_df.iloc[1]['Center (x, y)'][0]:
+        positive_embeddings = latent_state[objeect_masks[0], :].numpy()
+        negative_embeddings = latent_state[~objeect_masks[0], :].numpy()
+    else:
+        positive_embeddings = latent_state[objeect_masks[1], :].numpy()
+        negative_embeddings = latent_state[~objeect_masks[1], :].numpy()
+    return [positive_embeddings], [negative_embeddings]
 
 def get_top_obj_pos_bottom_obj_neg(latent_state, obj_df, objeect_masks):
     """
@@ -528,8 +555,8 @@ def visualize_vecprod_activation_heatmap(boundary_vector, saveroot, t_index, pro
 
 # %%
 positive_threshold = 180 
-saveroot = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/latent_store_norm1"
-figdir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/feature_classifier'
+saveroot = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/latent_store_norm2"
+figdir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot/feature_classifier/norm_2'
 # %%
 # seed = 0
 # for t_index in reversed(range(14)):
@@ -575,7 +602,9 @@ layer_id = args.layer_id
 for t_index in reversed(range(args.t_start, args.t_end)):
     for get_pos_neg_embeddings_func, annot_label in [
                         (get_left_obj_pos_right_obj_neg, "leftobj_vs_rightobj"),
-                        (get_right_obj_pos_left_obj_neg, "rightobj_vs_leftobj"),
+                        #(get_right_obj_pos_left_obj_neg, "rightobj_vs_leftobj"),
+                        (get_left_obj_pos_others_neg, "leftobj_vs_others"),
+                        (get_right_obj_pos_others_neg, "rightobj_vs_others"),
                         # (get_obj_pos_others_neg, "obj_vs_others"),
                         # (get_top_obj_pos_others_neg, "topobj_vs_others"),
                         # (get_bottom_obj_pos_others_neg, "bottomobj_vs_others"), 
@@ -598,7 +627,7 @@ for t_index in reversed(range(args.t_start, args.t_end)):
             if os.path.exists(savepath):
                 print(f"Skipping {savepath} because it already exists")
                 continue
-            positive_embeddings, negative_embeddings = collect_pos_neg_embeddings_layerwise(saveroot, t_index=t_index, prompt_ids=range(16), layer_id=layer_id, seed_ids=range(10),
+            positive_embeddings, negative_embeddings = collect_pos_neg_embeddings_layerwise(saveroot, t_index=t_index, prompt_ids=range(64), layer_id=layer_id, seed_ids=np.random.choice(10, size=3, replace=False),
                                                                                 get_pos_neg_embeddings_func=get_pos_neg_embeddings_func, diffusion_pass=training_pass)
             clf, boundary_vector, eval_dict = train_classifier_and_visualize(positive_embeddings, negative_embeddings,
                                                     visualize=False, solver='liblinear', max_iter=100) # liblinear | lbfgs | saga
