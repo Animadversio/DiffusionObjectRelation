@@ -1,0 +1,288 @@
+red triangle is above red triangle
+red triangle is above red square
+red triangle is above red circle
+red triangle is above blue triangle
+red triangle is above blue square
+red triangle is above blue circle
+red triangle is below red triangle
+red triangle is below red square
+red triangle is below red circle
+red triangle is below blue triangle
+red triangle is below blue square
+red triangle is below blue circle
+red triangle is to the left of red triangle
+red triangle is to the left of red square
+red triangle is to the left of red circle
+red triangle is to the left of blue triangle
+red triangle is to the left of blue square
+red triangle is to the left of blue circle
+red triangle is to the right of red triangle
+red triangle is to the right of red square
+red triangle is to the right of red circle
+red triangle is to the right of blue triangle
+red triangle is to the right of blue square
+red triangle is to the right of blue circle
+red triangle is to the upper left of red triangle
+red triangle is to the upper left of red square
+red triangle is to the upper left of red circle
+red triangle is to the upper left of blue triangle
+red triangle is to the upper left of blue square
+red triangle is to the upper left of blue circle
+red triangle is to the upper right of red triangle
+red triangle is to the upper right of red square
+red triangle is to the upper right of red circle
+red triangle is to the upper right of blue triangle
+red triangle is to the upper right of blue square
+red triangle is to the upper right of blue circle
+red triangle is to the lower left of red triangle
+red triangle is to the lower left of red square
+red triangle is to the lower left of red circle
+red triangle is to the lower left of blue triangle
+red triangle is to the lower left of blue square
+red triangle is to the lower left of blue circle
+red triangle is to the lower right of red triangle
+red triangle is to the lower right of red square
+red triangle is to the lower right of red circle
+red triangle is to the lower right of blue triangle
+red triangle is to the lower right of blue square
+red triangle is to the lower right of blue circle
+red square is above red triangle
+red square is above red square
+red square is above red circle
+red square is above blue triangle
+red square is above blue square
+red square is above blue circle
+red square is below red triangle
+red square is below red square
+red square is below red circle
+red square is below blue triangle
+red square is below blue square
+red square is below blue circle
+red square is to the left of red triangle
+red square is to the left of red square
+red square is to the left of red circle
+red square is to the left of blue triangle
+red square is to the left of blue square
+red square is to the left of blue circle
+red square is to the right of red triangle
+red square is to the right of red square
+red square is to the right of red circle
+red square is to the right of blue triangle
+red square is to the right of blue square
+red square is to the right of blue circle
+red square is to the upper left of red triangle
+red square is to the upper left of red square
+red square is to the upper left of red circle
+red square is to the upper left of blue triangle
+red square is to the upper left of blue square
+red square is to the upper left of blue circle
+red square is to the upper right of red triangle
+red square is to the upper right of red square
+red square is to the upper right of red circle
+red square is to the upper right of blue triangle
+red square is to the upper right of blue square
+red square is to the upper right of blue circle
+red square is to the lower left of red triangle
+red square is to the lower left of red square
+red square is to the lower left of red circle
+red square is to the lower left of blue triangle
+red square is to the lower left of blue square
+red square is to the lower left of blue circle
+red square is to the lower right of red triangle
+red square is to the lower right of red square
+red square is to the lower right of red circle
+red square is to the lower right of blue triangle
+red square is to the lower right of blue square
+red square is to the lower right of blue circle
+red circle is above red triangle
+red circle is above red square
+red circle is above red circle
+red circle is above blue triangle
+red circle is above blue square
+red circle is above blue circle
+red circle is below red triangle
+red circle is below red square
+red circle is below red circle
+red circle is below blue triangle
+red circle is below blue square
+red circle is below blue circle
+red circle is to the left of red triangle
+red circle is to the left of red square
+red circle is to the left of red circle
+red circle is to the left of blue triangle
+red circle is to the left of blue square
+red circle is to the left of blue circle
+red circle is to the right of red triangle
+red circle is to the right of red square
+red circle is to the right of red circle
+red circle is to the right of blue triangle
+red circle is to the right of blue square
+red circle is to the right of blue circle
+red circle is to the upper left of red triangle
+red circle is to the upper left of red square
+red circle is to the upper left of red circle
+red circle is to the upper left of blue triangle
+red circle is to the upper left of blue square
+red circle is to the upper left of blue circle
+red circle is to the upper right of red triangle
+red circle is to the upper right of red square
+red circle is to the upper right of red circle
+red circle is to the upper right of blue triangle
+red circle is to the upper right of blue square
+red circle is to the upper right of blue circle
+red circle is to the lower left of red triangle
+red circle is to the lower left of red square
+red circle is to the lower left of red circle
+red circle is to the lower left of blue triangle
+red circle is to the lower left of blue square
+red circle is to the lower left of blue circle
+red circle is to the lower right of red triangle
+red circle is to the lower right of red square
+red circle is to the lower right of red circle
+red circle is to the lower right of blue triangle
+red circle is to the lower right of blue square
+red circle is to the lower right of blue circle
+blue triangle is above red triangle
+blue triangle is above red square
+blue triangle is above red circle
+blue triangle is above blue triangle
+blue triangle is above blue square
+blue triangle is above blue circle
+blue triangle is below red triangle
+blue triangle is below red square
+blue triangle is below red circle
+blue triangle is below blue triangle
+blue triangle is below blue square
+blue triangle is below blue circle
+blue triangle is to the left of red triangle
+blue triangle is to the left of red square
+blue triangle is to the left of red circle
+blue triangle is to the left of blue triangle
+blue triangle is to the left of blue square
+blue triangle is to the left of blue circle
+blue triangle is to the right of red triangle
+blue triangle is to the right of red square
+blue triangle is to the right of red circle
+blue triangle is to the right of blue triangle
+blue triangle is to the right of blue square
+blue triangle is to the right of blue circle
+blue triangle is to the upper left of red triangle
+blue triangle is to the upper left of red square
+blue triangle is to the upper left of red circle
+blue triangle is to the upper left of blue triangle
+blue triangle is to the upper left of blue square
+blue triangle is to the upper left of blue circle
+blue triangle is to the upper right of red triangle
+blue triangle is to the upper right of red square
+blue triangle is to the upper right of red circle
+blue triangle is to the upper right of blue triangle
+blue triangle is to the upper right of blue square
+blue triangle is to the upper right of blue circle
+blue triangle is to the lower left of red triangle
+blue triangle is to the lower left of red square
+blue triangle is to the lower left of red circle
+blue triangle is to the lower left of blue triangle
+blue triangle is to the lower left of blue square
+blue triangle is to the lower left of blue circle
+blue triangle is to the lower right of red triangle
+blue triangle is to the lower right of red square
+blue triangle is to the lower right of red circle
+blue triangle is to the lower right of blue triangle
+blue triangle is to the lower right of blue square
+blue triangle is to the lower right of blue circle
+blue square is above red triangle
+blue square is above red square
+blue square is above red circle
+blue square is above blue triangle
+blue square is above blue square
+blue square is above blue circle
+blue square is below red triangle
+blue square is below red square
+blue square is below red circle
+blue square is below blue triangle
+blue square is below blue square
+blue square is below blue circle
+blue square is to the left of red triangle
+blue square is to the left of red square
+blue square is to the left of red circle
+blue square is to the left of blue triangle
+blue square is to the left of blue square
+blue square is to the left of blue circle
+blue square is to the right of red triangle
+blue square is to the right of red square
+blue square is to the right of red circle
+blue square is to the right of blue triangle
+blue square is to the right of blue square
+blue square is to the right of blue circle
+blue square is to the upper left of red triangle
+blue square is to the upper left of red square
+blue square is to the upper left of red circle
+blue square is to the upper left of blue triangle
+blue square is to the upper left of blue square
+blue square is to the upper left of blue circle
+blue square is to the upper right of red triangle
+blue square is to the upper right of red square
+blue square is to the upper right of red circle
+blue square is to the upper right of blue triangle
+blue square is to the upper right of blue square
+blue square is to the upper right of blue circle
+blue square is to the lower left of red triangle
+blue square is to the lower left of red square
+blue square is to the lower left of red circle
+blue square is to the lower left of blue triangle
+blue square is to the lower left of blue square
+blue square is to the lower left of blue circle
+blue square is to the lower right of red triangle
+blue square is to the lower right of red square
+blue square is to the lower right of red circle
+blue square is to the lower right of blue triangle
+blue square is to the lower right of blue square
+blue square is to the lower right of blue circle
+blue circle is above red triangle
+blue circle is above red square
+blue circle is above red circle
+blue circle is above blue triangle
+blue circle is above blue square
+blue circle is above blue circle
+blue circle is below red triangle
+blue circle is below red square
+blue circle is below red circle
+blue circle is below blue triangle
+blue circle is below blue square
+blue circle is below blue circle
+blue circle is to the left of red triangle
+blue circle is to the left of red square
+blue circle is to the left of red circle
+blue circle is to the left of blue triangle
+blue circle is to the left of blue square
+blue circle is to the left of blue circle
+blue circle is to the right of red triangle
+blue circle is to the right of red square
+blue circle is to the right of red circle
+blue circle is to the right of blue triangle
+blue circle is to the right of blue square
+blue circle is to the right of blue circle
+blue circle is to the upper left of red triangle
+blue circle is to the upper left of red square
+blue circle is to the upper left of red circle
+blue circle is to the upper left of blue triangle
+blue circle is to the upper left of blue square
+blue circle is to the upper left of blue circle
+blue circle is to the upper right of red triangle
+blue circle is to the upper right of red square
+blue circle is to the upper right of red circle
+blue circle is to the upper right of blue triangle
+blue circle is to the upper right of blue square
+blue circle is to the upper right of blue circle
+blue circle is to the lower left of red triangle
+blue circle is to the lower left of red square
+blue circle is to the lower left of red circle
+blue circle is to the lower left of blue triangle
+blue circle is to the lower left of blue square
+blue circle is to the lower left of blue circle
+blue circle is to the lower right of red triangle
+blue circle is to the lower right of red square
+blue circle is to the lower right of red circle
+blue circle is to the lower right of blue triangle
+blue circle is to the lower right of blue square
+blue circle is to the lower right of blue circle

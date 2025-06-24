@@ -24,6 +24,12 @@ def get_meaningful_token_indices(prompt: str):
     }
 
     doc = nlp(prompt)
+    
+    # Debug: Print all tokens and their dependencies
+    print(f"DEBUG: Analyzing prompt: '{prompt}'")
+    print("DEBUG: Tokens and their dependencies:")
+    for tok in doc:
+        print(f"  {tok.text}: {tok.dep_} (head: {tok.head.text}, index: {tok.i})")
 
     # 1. Find the first spatial keyword
     spatial_tok = next(
@@ -36,10 +42,17 @@ def get_meaningful_token_indices(prompt: str):
 
     # 2. Find all adjectival modifiers (amod), sorted by token index
     amod_toks = sorted(
-        [tok for tok in doc if tok.dep_ == "amod"],
+        [tok for tok in doc if tok.dep_ == "amod" or tok.dep_ == "compound"],
         key=lambda t: t.i
     )
+    
+    # Debug: Print found adjectival modifiers
+    print(f"DEBUG: Found {len(amod_toks)} adjectival/compound modifiers:")
+    for i, tok in enumerate(amod_toks):
+        print(f"  {i+1}. {tok.text} (index: {tok.i}, head: {tok.head.text}, dep: {tok.dep_})")
+    
     if len(amod_toks) < 2:
+        print(f"DEBUG: ERROR - Need at least 2 adjectival/compound modifiers, but only found {len(amod_toks)}")
         raise ValueError("Need at least two adjectival modifiers (colors).")
 
     # 3. Assign colors and their head nouns
