@@ -170,7 +170,7 @@ def plot_attention_layer_head_heatmaps(score_tensor, title_str, figsize=(12, 8),
         figsize: Figure size tuple
         num_heads: Number of attention heads to plot
     """
-    figh, axs = plt.subplots(2, 3, figsize=figsize, sharex=True, sharey=True)
+    figh, axs = plt.subplots(num_heads // 3, 3, figsize=figsize, sharex=True, sharey=True)
     axs = axs.flatten()
     num_heads = score_tensor.shape[-1]
     for head_idx in range(num_heads):
