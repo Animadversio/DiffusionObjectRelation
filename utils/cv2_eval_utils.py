@@ -267,12 +267,26 @@ SHAPE_SYNONYMS = {
 
 def evaluate_alignment(prompt, df, color_map=COLOR_NAME_TO_RGB):
     import re
-    # parse prompt
-    pattern = r'(\w+)\s+(\w+)\s+is\s+to\s+the\s+(left|right|above|below)\s+of\s+(\w+)\s+(\w+)'
-    m = re.match(pattern, prompt.lower())
+    # parse prompt - handle both short and long formats
+    # Short format: "red triangle is above red triangle"
+    # Long format: "red triangle is to the left of red triangle"
+    # Complex format: "red triangle is to the upper left of red triangle"
+    
+    # Try long format first (with compound directions)
+    pattern_long = r'(\w+)\s+(\w+)\s+is\s+to\s+the\s+(upper\s+left|upper\s+right|lower\s+left|lower\s+right|left|right|above|below)\s+of\s+(\w+)\s+(\w+)'
+    m = re.match(pattern_long, prompt.lower())
+    
     if not m:
-        raise ValueError(f"Prompt '{prompt}' not in expected format")
-    color1, obj1, relation, color2, obj2 = m.groups()
+        # Try short format (only for above/below)
+        pattern_short = r'(\w+)\s+(\w+)\s+is\s+(above|below)\s+(\w+)\s+(\w+)'
+        m = re.match(pattern_short, prompt.lower())
+        if not m:
+            raise ValueError(f"Prompt '{prompt}' not in expected format")
+        # For short format, we need to rearrange the groups to match long format
+        color1, obj1, relation, color2, obj2 = m.groups()
+    else:
+        # For long format, extract normally
+        color1, obj1, relation, color2, obj2 = m.groups()
     
     # 0) check shape existence with synonyms
     shapes_lower = df['Shape'].str.lower()
@@ -312,22 +326,35 @@ def evaluate_alignment(prompt, df, color_map=COLOR_NAME_TO_RGB):
     # 3) spatial_color_relation: check whether the red‐object centroid 
     #    is left/above/etc of the blue‐object centroid – regardless of shape
     # first, score every detected object by how close its RGB is to each prompt color
+    # Extended rel_map to handle compound directions
     rel_map = {
-            'left':  (0, lambda a, b: a < b),
-            'right': (0, lambda a, b: a > b),
-            'above': (1, lambda a, b: a < b),
-            'below': (1, lambda a, b: a > b),
-        }
+        'left':  (0, lambda a, b: a < b),
+        'right': (0, lambda a, b: a > b),
+        'above': (1, lambda a, b: a < b),
+        'below': (1, lambda a, b: a > b),
+        'upper left': (None, lambda pos1, pos2: pos1[0] < pos2[0] and pos1[1] < pos2[1]),
+        'upper right': (None, lambda pos1, pos2: pos1[0] > pos2[0] and pos1[1] < pos2[1]),
+        'lower left': (None, lambda pos1, pos2: pos1[0] < pos2[0] and pos1[1] > pos2[1]),
+        'lower right': (None, lambda pos1, pos2: pos1[0] > pos2[0] and pos1[1] > pos2[1]),
+    }
+    
     df_copy['score_c1'] = df_copy['color_array'].apply(lambda c: color_score(c, color_map[color1]))
     df_copy['score_c2'] = df_copy['color_array'].apply(lambda c: color_score(c, color_map[color2]))
     # pick the best‐matching objects by color
     row_color1 = df_copy.loc[df_copy['score_c1'].idxmax()]
     row_color2 = df_copy.loc[df_copy['score_c2'].idxmax()]
+    
     axis, cond = rel_map[relation]
-    spatial_color_relation = bool(cond(
-        row_color1['Center (x, y)'][axis],
-        row_color2['Center (x, y)'][axis]
-    ))
+    if axis is None:  # compound direction
+        spatial_color_relation = bool(cond(
+            row_color1['Center (x, y)'],
+            row_color2['Center (x, y)']
+        ))
+    else:  # simple direction
+        spatial_color_relation = bool(cond(
+            row_color1['Center (x, y)'][axis],
+            row_color2['Center (x, y)'][axis]
+        ))
 
     # 4) spatial_shape_relation: check whether the circle centroid 
     #    is left/above/etc of the square centroid – regardless of color
@@ -335,12 +362,16 @@ def evaluate_alignment(prompt, df, color_map=COLOR_NAME_TO_RGB):
         # safe to call get_row now
         row_shape1 = get_row(obj1)
         row_shape2 = get_row(obj2)
-        spatial_shape_relation = bool(
-            cond(
+        if axis is None:  # compound direction
+            spatial_shape_relation = bool(cond(
+                row_shape1['Center (x, y)'],
+                row_shape2['Center (x, y)']
+            ))
+        else:  # simple direction
+            spatial_shape_relation = bool(cond(
                 row_shape1['Center (x, y)'][axis],
                 row_shape2['Center (x, y)'][axis]
-            )
-        )
+            ))
     else:
         spatial_shape_relation = False
     

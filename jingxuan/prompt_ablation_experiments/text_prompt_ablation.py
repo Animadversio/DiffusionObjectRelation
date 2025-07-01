@@ -497,7 +497,7 @@ def plot_denoiser_traj(axes, denoiser_traj, num_image_to_plot,inference_step_sta
         axes[i].axis('off')  # Turn off axis labels
 
 # Calculate average scores across all images
-def calculate_gen_images_scores(image_logs):
+def calculate_gen_images_scores(image_logs,prompt):
     shape_match_scores = []
     color_binding_scores = []
     spatial_color_scores = []
@@ -520,7 +520,7 @@ def calculate_gen_images_scores(image_logs):
             continue
         
         # Evaluate alignment
-        result = evaluate_alignment("red circle is to the left of blue square", df)
+        result = evaluate_alignment(prompt, df)
         
         # Add scores
         shape_match_scores.append(int(result['shape_match']))
@@ -640,7 +640,7 @@ def generate_and_quantify_images(prompt_dir,axes, pipeline, prompt, max_length=1
     #save_end_imgs(prompt,save_dir, image_logs,inference_step_star,manipulated_mask_func,mask_kwargs)
     #save_intermediate_imgs(prompt,save_dir, denoiser_traj,inference_step_star,manipulated_mask_func,mask_kwargs)
     # calculate scores
-    avg_scores = calculate_gen_images_scores(image_logs)
+    avg_scores = calculate_gen_images_scores(image_logs,prompt)
     save_cv2_eval(prompt_dir=prompt_dir,prompt=prompt,inference_step_star=inference_step_star,manipulated_mask_func=manipulated_mask_func,reverse_mask=reverse_mask,one_step_mode=one_step_mode,avg_scores=avg_scores,mask_kwargs=mask_kwargs)
     plot_denoiser_traj(axes, denoiser_traj, num_image_to_plot,inference_step_star)
     # Clear variables to free memory
@@ -653,6 +653,28 @@ def generate_and_quantify_images(prompt_dir,axes, pipeline, prompt, max_length=1
     # Clear CUDA cache
     torch.cuda.empty_cache()
     #return image_logs
+
+def generate_and_quantify_images_original(prompt_dir, pipeline, prompt, max_length=120, weight_dtype=torch.bfloat16,
+                   num_inference_steps=14, guidance_scale=4.5, num_images_per_prompt=25,  device="cuda", random_seed=0,inference_step_star=None,manipulated_mask_func=None,reverse_mask=False,one_step_mode=False,**mask_kwargs):
+    image_logs, latents_traj, pred_traj, t_traj, denoiser_traj = visualize_prompt_with_traj(pipeline=pipeline, prompt=prompt, max_length=max_length, weight_dtype=weight_dtype, num_images_per_prompt=num_images_per_prompt, \
+        random_seed=random_seed,inference_step_star=inference_step_star, manipulated_mask_func=manipulated_mask_func,reverse_mask=reverse_mask,one_step_mode=one_step_mode,**mask_kwargs)
+    # Save generated images
+    # save_dir = '/n/home13/xupan/sompolinsky_lab/object_relation/prompt_ablation/end_imgs'
+    #save_end_imgs(prompt,save_dir, image_logs,inference_step_star,manipulated_mask_func,mask_kwargs)
+    #save_intermediate_imgs(prompt,save_dir, denoiser_traj,inference_step_star,manipulated_mask_func,mask_kwargs)
+    # calculate scores
+    avg_scores = calculate_gen_images_scores(image_logs,prompt)
+    save_cv2_eval(prompt_dir=prompt_dir,prompt=prompt,inference_step_star=inference_step_star,manipulated_mask_func=manipulated_mask_func,reverse_mask=reverse_mask,one_step_mode=one_step_mode,avg_scores=avg_scores,mask_kwargs=mask_kwargs)
+    #plot_denoiser_traj(axes, denoiser_traj, num_image_to_plot,inference_step_star)
+    # Clear variables to free memory
+    del image_logs
+    del latents_traj 
+    del pred_traj
+    del t_traj
+    del denoiser_traj
+    
+    # Clear CUDA cache
+    torch.cuda.empty_cache()
 
 def generate_and_quantify_images_batch(prompt_dir, pipeline, prompt, max_length, weight_dtype, num_image_to_plot, mask_func, reverse_mask, one_step_mode,mask_type):
     fig, axeses = plt.subplots(14,14, figsize=(14,14))
@@ -679,11 +701,20 @@ def main():
     parser.add_argument('--prompt_file', type=str, default='/n/home13/xupan/sompolinsky_lab/DiffusionObjectRelation/jingxuan/prompt_ablation_experiments/spatial_custom.txt', help='Path to text file containing prompts (one per line)')
     parser.add_argument('--pretrained_model', type=str, default='PixArt-alpha/PixArt-XL-2-512x512', help='Path to pretrained model')
     parser.add_argument('--from_pretrained', default=False, help='Whether to load from pretrained model instead of custom trained model')
-    parser.add_argument('--mask_func', type=Callable, default=mask_semantic_parts_attention, help='Mask function to use')
+    parser.add_argument('--mask_func', type=str, default='mask_semantic_parts_attention', help='Mask function to use (use "None" to disable)')
     parser.add_argument('--reverse_mask', default=False, help='Whether to reverse mask')
     parser.add_argument('--one_step_mode', default=True, help='Whether to use one step mode')
     parser.add_argument('--num_image_to_plot', type=int, default=0, help='Number of images to plot')
     args = parser.parse_args()
+
+    # Convert mask_func string to actual function
+    if args.mask_func == "None":
+        args.mask_func = None
+    elif args.mask_func == "mask_semantic_parts_attention":
+        args.mask_func = mask_semantic_parts_attention
+    else:
+        # Handle other mask functions if needed
+        raise ValueError(f"Unknown mask function: {args.mask_func}")
 
     def load_custom_trained_model(model_dir, t5_path, text_feat_dir,weight_dtype=torch.bfloat16):
         # Load model checkpoint and config
@@ -737,16 +768,20 @@ def main():
         print("Loading custom trained model")
         pipeline, max_length = load_custom_trained_model(args.model_dir, args.t5_path, args.text_feat_dir)
     # Process each prompt
-    parts_to_mask = ['colors', 'objects', 'spatial']
     for i, prompt in enumerate(prompts):
         print(f"Processing prompt {i+1}/{num_prompts}: {prompt}")
         prompt_dir = os.path.join(save_dir, prompt.replace(' ', '_'))
-        if os.path.exists(os.path.join(prompt_dir, 'saved_metrics')):
-            print(f"Skipping prompt {prompt} as saved_metrics already exists")
-            continue
         os.makedirs(prompt_dir, exist_ok=True)
-        for p in parts_to_mask:
-            generate_and_quantify_images_batch(prompt_dir=prompt_dir, pipeline=pipeline, prompt=prompt, max_length=max_length, weight_dtype=torch.bfloat16, num_image_to_plot=args.num_image_to_plot, mask_func=args.mask_func, reverse_mask=args.reverse_mask, one_step_mode=args.one_step_mode, mask_type=p)
+        
+        if args.mask_func is not None:
+            if os.path.exists(os.path.join(prompt_dir, 'sample_0_colors_one_step.png')):
+                print(f"Skipping prompt {prompt} as saved_metrics already exists")
+                continue
+            parts_to_mask = ['colors', 'objects', 'spatial']
+            for p in parts_to_mask:
+                generate_and_quantify_images_batch(prompt_dir=prompt_dir, pipeline=pipeline, prompt=prompt, max_length=max_length, weight_dtype=torch.bfloat16, num_image_to_plot=args.num_image_to_plot, mask_func=args.mask_func, reverse_mask=args.reverse_mask, one_step_mode=args.one_step_mode, mask_type=p)
+        else:
+            generate_and_quantify_images_original(prompt_dir=prompt_dir, pipeline=pipeline, prompt=prompt, max_length=max_length, weight_dtype=torch.bfloat16,one_step_mode=args.one_step_mode)
 
 if __name__ == "__main__":
     main()
