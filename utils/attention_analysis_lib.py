@@ -202,6 +202,46 @@ def plot_attention_layer_head_heatmaps(score_tensor, title_str, figsize=(12, 8),
     return figh
 
 
+def plot_attention_layer_head_time_heatmaps(score_tensor, title_str, figsize=(12, 8), sample_idx=-1, num_steps=14, share_clim=False, panel_shape=None):
+    """
+    Plot attention heatmaps for multiple heads. Layer by head per panel, each panel is a step.
+    
+    Args:
+        score_tensor: Tensor of shape (layers, steps, samples, heads) or (layers, steps, heads)
+        title_str: Title string for the plot
+        figsize: Figure size tuple
+        num_heads: Number of attention heads to plot
+    """
+    if panel_shape is None:
+        panel_shape = (num_steps // 3, 3)
+    num_steps = score_tensor.shape[1]
+    figh, axs = plt.subplots(int(np.ceil(num_steps / 3)), 3, figsize=figsize, sharex=True, sharey=True)
+    axs = axs.flatten()
+    if share_clim:
+        vmin = score_tensor.min()
+        vmax = score_tensor.max()
+    else:
+        vmin = None
+        vmax = None
+    for step_idx in range(num_steps):
+        if sample_idx is not None:  # (layers, steps, samples, heads)
+            data = score_tensor.cpu()[:, step_idx, sample_idx, :]  # Last sample
+        else:  # (layers, steps, heads)
+            data = score_tensor.cpu()[:, step_idx, :, :].mean(dim=1)
+            
+        sns.heatmap(data, cmap="viridis", ax=axs[step_idx], cbar=True, vmin=vmin, vmax=vmax)
+        axs[step_idx].set_title(f"Step {step_idx}")
+        axs[step_idx].set_xlabel("Head number")
+        axs[step_idx].set_ylabel("Layer")
+        axs[step_idx].set_aspect("equal")
+        plt.axis("tight")
+    
+    plt.suptitle(title_str+(f" | sample_id = {sample_idx}" if sample_idx is not None else " | avg over all samples"))
+    plt.tight_layout()
+    plt.show()
+    return figh
+
+
 def plot_single_attn_map(ax, attn_map, token_idx=None, map_shape=(16, 16), use_heatmap=False, cbar=True):
     """Plot a single attention map on the given axes.
     
