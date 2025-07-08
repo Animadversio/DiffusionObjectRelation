@@ -160,7 +160,7 @@ def tv2d(A: torch.Tensor) -> torch.Tensor:
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-def plot_attention_layer_head_heatmaps(score_tensor, title_str, figsize=(12, 8), sample_idx=-1, num_heads=6):
+def plot_attention_layer_head_heatmaps(score_tensor, title_str, figsize=(12, 8), sample_idx=-1, num_heads=6, share_clim=False, panel_shape=None):
     """
     Plot attention heatmaps for multiple heads.
     
@@ -170,19 +170,71 @@ def plot_attention_layer_head_heatmaps(score_tensor, title_str, figsize=(12, 8),
         figsize: Figure size tuple
         num_heads: Number of attention heads to plot
     """
-    figh, axs = plt.subplots(num_heads // 3, 3, figsize=figsize, sharex=True, sharey=True)
+    if panel_shape is None:
+        panel_shape = (num_heads // 3, 3)
+    
+    figh, axs = plt.subplots(panel_shape[0], panel_shape[1], figsize=figsize, sharex=True, sharey=True)
     axs = axs.flatten()
     num_heads = score_tensor.shape[-1]
+    if share_clim:
+        vmin = score_tensor.min()
+        vmax = score_tensor.max()
+    else:
+        vmin = None
+        vmax = None
     for head_idx in range(num_heads):
         if sample_idx is not None:  # (layers, steps, samples, heads)
-            data = score_tensor.cpu()[:, :, sample_idx, head_idx]  # Last sample
+            if isinstance(sample_idx, slice) or isinstance(sample_idx, list):
+                data = score_tensor.cpu()[:, :, sample_idx, head_idx].mean(2)  # Last sample
+            else:
+                data = score_tensor.cpu()[:, :, sample_idx, head_idx]  # Last sample
         else:  # (layers, steps, heads)
             data = score_tensor.cpu()[:, :, :, head_idx].mean(dim=2)
             
-        sns.heatmap(data, cmap="viridis", ax=axs[head_idx], cbar=True)
+        sns.heatmap(data, cmap="viridis", ax=axs[head_idx], cbar=True, vmin=vmin, vmax=vmax)
         axs[head_idx].set_title(f"Head {head_idx}")
         axs[head_idx].set_xlabel("Sample step")
         axs[head_idx].set_ylabel("Layer")
+    
+    plt.suptitle(title_str+(f" | sample_id = {sample_idx}" if sample_idx is not None else " | avg over all samples"))
+    plt.tight_layout()
+    plt.show()
+    return figh
+
+
+def plot_attention_layer_head_time_heatmaps(score_tensor, title_str, figsize=(12, 8), sample_idx=-1, num_steps=14, share_clim=False, panel_shape=None):
+    """
+    Plot attention heatmaps for multiple heads. Layer by head per panel, each panel is a step.
+    
+    Args:
+        score_tensor: Tensor of shape (layers, steps, samples, heads) or (layers, steps, heads)
+        title_str: Title string for the plot
+        figsize: Figure size tuple
+        num_heads: Number of attention heads to plot
+    """
+    if panel_shape is None:
+        panel_shape = (num_steps // 3, 3)
+    num_steps = score_tensor.shape[1]
+    figh, axs = plt.subplots(int(np.ceil(num_steps / 3)), 3, figsize=figsize, sharex=True, sharey=True)
+    axs = axs.flatten()
+    if share_clim:
+        vmin = score_tensor.min()
+        vmax = score_tensor.max()
+    else:
+        vmin = None
+        vmax = None
+    for step_idx in range(num_steps):
+        if sample_idx is not None:  # (layers, steps, samples, heads)
+            data = score_tensor.cpu()[:, step_idx, sample_idx, :]  # Last sample
+        else:  # (layers, steps, heads)
+            data = score_tensor.cpu()[:, step_idx, :, :].mean(dim=1)
+            
+        sns.heatmap(data, cmap="viridis", ax=axs[step_idx], cbar=True, vmin=vmin, vmax=vmax)
+        axs[step_idx].set_title(f"Step {step_idx}")
+        axs[step_idx].set_xlabel("Head number")
+        axs[step_idx].set_ylabel("Layer")
+        axs[step_idx].set_aspect("equal")
+        plt.axis("tight")
     
     plt.suptitle(title_str+(f" | sample_id = {sample_idx}" if sample_idx is not None else " | avg over all samples"))
     plt.tight_layout()
