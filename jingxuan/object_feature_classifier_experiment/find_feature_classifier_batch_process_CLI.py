@@ -15,9 +15,10 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from tqdm.auto import trange, tqdm
 import sys
-sys.path.append("/n/home13/xupan/sompolinsky_lab/DiffusionObjectRelation/utils")
-from plot_utils import saveallforms
-from cv2_eval_utils import find_classify_object_masks
+sys.path.append("/n/home13/xupan/sompolinsky_lab/DiffusionObjectRelation")
+sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
+from utils.plot_utils import saveallforms
+from utils.cv2_eval_utils import find_classify_object_masks
 
 # %% [markdown]
 # #### Utils function to modularize positive / negative embedding extraction code
