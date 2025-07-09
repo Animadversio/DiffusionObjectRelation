@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch as th
 from os.path import join
 
-import torch.nn as nn
 # Create text encoder class
 class RandomEmbeddingEncoder(nn.Module):
     def __init__(self, embedding_dict=None, input_ids2dict_ids=None, dict_ids2input_ids=None):

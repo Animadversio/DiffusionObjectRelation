@@ -409,6 +409,37 @@ def visualize_attn_maps(
     return fig
 
 
+def plot_layer_head_score_summary(template_similarity_scores, template_type, step_sum_type="max", step_id=None):
+    n_samples = template_similarity_scores.shape[1] // 2
+    cond_slice = slice(n_samples, n_samples * 2)
+    uncond_slice = slice(0, n_samples)
+    if step_sum_type == "max":
+        temporal_summary = template_similarity_scores.max(dim=1).values
+    elif step_sum_type == "mean":
+        temporal_summary = template_similarity_scores.mean(dim=1)
+    elif step_sum_type == "index" and step_id is not None:
+        temporal_summary = template_similarity_scores[:, step_id, :, :]
+    else:
+        raise ValueError(f"Invalid step_sum_type: {step_sum_type}")
+    layer_head_summary = temporal_summary[:, cond_slice, :].mean(dim=-2).numpy() # average over samples 
+    fig = plt.figure(figsize=(10, 4.5))
+    plt.subplot(1, 2, 1)
+    sns.heatmap(layer_head_summary)
+    plt.title("Cond pass")
+    plt.axis('image')
+    plt.ylabel("Layer")
+    plt.xlabel("Head")
+    plt.subplot(1, 2, 2)
+    layer_head_summary = temporal_summary[:, uncond_slice, :].mean(dim=-2).numpy() # average over samples 
+    sns.heatmap(layer_head_summary)
+    plt.title("Uncond pass")
+    plt.axis('image')
+    plt.ylabel("Layer")
+    plt.xlabel("Head")
+    plt.suptitle(f"Attention template similarity Layer-Head Summary | {step_sum_type} over steps | {template_type} ")
+    plt.show()
+    return fig
+
 
 def toggle_fused_attn(model, fused_attn=True):
     for block in model.blocks:
