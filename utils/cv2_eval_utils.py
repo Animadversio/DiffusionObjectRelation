@@ -1,6 +1,6 @@
 import cv2
-import numpy as np
 import pandas as pd
+import numpy as np
 from PIL import Image
 
 def find_classify_objects(image, area_threshold=100, radius=16.0):
@@ -62,6 +62,14 @@ def find_classify_objects(image, area_threshold=100, radius=16.0):
 
 
 def find_classify_object_masks(image, area_threshold=100, radius=16.0):
+    """Key function for finding object, extract information and build masks
+    Args:
+        image: PIL Image to split
+        area_threshold: Minimum area of the object to be considered
+        radius: Radius of the object to be considered
+    Returns:
+        classified_objects_df: DataFrame containing the classified objects
+    """
     if isinstance(image, Image.Image):
         image = np.array(image)
     # gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -121,9 +129,14 @@ def find_classify_object_masks(image, area_threshold=100, radius=16.0):
     return classified_objects_df, object_masks
 
 
-import pandas as pd
-
 def identity_spatial_relation(x1, y1, x2, y2):
+    """Turn two points into a string of spatial relation
+    Args:
+        x1, y1: x, y coordinates of the first point
+        x2, y2: x, y coordinates of the second point
+    Returns:
+        observed_relation: string of spatial relation
+    """
     dx = x1 - x2  # Positive means shape1 is to the right
     dy = y1 - y2  # Positive means shape1 is lower
     # Define thresholds for "directly" above/below/left/right
@@ -157,6 +170,8 @@ def evaluate_parametric_relation(df, scene_info, MARGIN=25):
     Parameters:
     df (pd.DataFrame): DataFrame containing object detection details. It must include 
                        columns 'Shape', 'Color (RGB)', 'Center (x, y)', and 'Area'.
+    scene_info: Dictionary containing the scene information
+    MARGIN: Margin for color thresholding
 
     Returns:
     bool: True if a blue-dominant triangle is above a red-dominant triangle, False otherwise.
@@ -244,8 +259,6 @@ scene_info_collection = {'blue_triangle_is_above_red_triangle':  {"color1": "blu
                         }
 
 
-import pandas as pd
-import numpy as np
 
 def color_score(detected_rgb, target_rgb):
     max_dist = np.linalg.norm(np.array([255, 255, 255]))
