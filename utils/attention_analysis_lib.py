@@ -409,8 +409,12 @@ def visualize_attn_maps(
     return fig
 
 
-def plot_layer_head_score_summary(template_similarity_scores, template_type, step_sum_type="max", step_id=None):
-    n_samples = template_similarity_scores.shape[1] // 2
+def plot_layer_head_score_summary(template_similarity_scores, template_type, step_sum_type="max", step_id=None, share_clim=False):
+    """Assume the shape is (num_layers, num_steps, num_images * 2, num_heads)
+    This function will summarize over the number of steps, 
+    Then average across splits of cond pass and uncond pass in the middle of image dimension. 
+    """
+    n_samples = template_similarity_scores.shape[2] // 2
     cond_slice = slice(n_samples, n_samples * 2)
     uncond_slice = slice(0, n_samples)
     if step_sum_type == "max":
@@ -421,24 +425,30 @@ def plot_layer_head_score_summary(template_similarity_scores, template_type, ste
         temporal_summary = template_similarity_scores[:, step_id, :, :]
     else:
         raise ValueError(f"Invalid step_sum_type: {step_sum_type}")
-    layer_head_summary = temporal_summary[:, cond_slice, :].mean(dim=-2).numpy() # average over samples 
+    cond_layer_head_summary = temporal_summary[:, cond_slice, :].mean(dim=-2).numpy() # average over samples 
+    uncond_layer_head_summary = temporal_summary[:, uncond_slice, :].mean(dim=-2).numpy() # average over samples 
+    if share_clim:
+        vmin = min(cond_layer_head_summary.min(), uncond_layer_head_summary.min())
+        vmax = max(cond_layer_head_summary.max(), uncond_layer_head_summary.max())
+    else:
+        vmin = None
+        vmax = None
     fig = plt.figure(figsize=(10, 4.5))
     plt.subplot(1, 2, 1)
-    sns.heatmap(layer_head_summary)
+    sns.heatmap(cond_layer_head_summary, vmin=vmin, vmax=vmax)
     plt.title("Cond pass")
     plt.axis('image')
     plt.ylabel("Layer")
     plt.xlabel("Head")
     plt.subplot(1, 2, 2)
-    layer_head_summary = temporal_summary[:, uncond_slice, :].mean(dim=-2).numpy() # average over samples 
-    sns.heatmap(layer_head_summary)
+    sns.heatmap(uncond_layer_head_summary, vmin=vmin, vmax=vmax)
     plt.title("Uncond pass")
     plt.axis('image')
     plt.ylabel("Layer")
     plt.xlabel("Head")
     plt.suptitle(f"Attention template similarity Layer-Head Summary | {step_sum_type} over steps | {template_type} ")
     plt.show()
-    return fig
+    return fig, cond_layer_head_summary, uncond_layer_head_summary
 
 
 def toggle_fused_attn(model, fused_attn=True):

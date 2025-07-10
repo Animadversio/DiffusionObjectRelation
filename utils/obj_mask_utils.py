@@ -440,3 +440,29 @@ def get_obj_pos_others_neg_mask(obj_df, object_masks):
     positive_mask = positive_token_mask
     negative_mask = ~positive_token_mask
     return positive_mask, negative_mask
+
+
+def get_background_pos_obj_neg_mask(obj_df, object_masks):
+    """
+    All objects are positive, others are negative including background.
+    Returns positive mask and negative mask.
+    """
+    
+    if len(obj_df) != 2:
+        # TODO: Not sure how to handle case when there are not exactly 2 objects
+        return np.array([]), np.array([])
+    
+    mask_dtype = object_masks[0].dtype
+    object_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
+    for i in range(len(obj_df)):
+        if mask_dtype == bool:
+            object_token_mask = object_token_mask | object_masks[i]
+        else:
+            object_token_mask = object_token_mask + object_masks[i]
+            
+    negative_mask = object_token_mask
+    if mask_dtype == bool:
+        positive_mask = ~object_token_mask
+    else:
+        positive_mask = np.clip(1 - object_token_mask, 0, 1)
+    return positive_mask, negative_mask
