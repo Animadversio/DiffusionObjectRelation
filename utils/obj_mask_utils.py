@@ -16,15 +16,19 @@ sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
 from utils.cv2_eval_utils import find_classify_object_masks
 
 positive_threshold = 180 
+MAP_SHAPE = (8, 8)
 
 def get_left_obj_pos_right_obj_neg_mask(obj_df, object_masks):
     """
     Left object is positive, right object is negative.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     if obj_df.iloc[0]['Center (x, y)'][0] < obj_df.iloc[1]['Center (x, y)'][0]:
         positive_mask = object_masks[0]
@@ -40,9 +44,12 @@ def get_right_obj_pos_left_obj_neg_mask(obj_df, object_masks):
     Right object is positive, left object is negative.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     if obj_df.iloc[0]['Center (x, y)'][0] > obj_df.iloc[1]['Center (x, y)'][0]:
         positive_mask = object_masks[0]
@@ -58,9 +65,12 @@ def get_left_obj_pos_others_neg_mask(obj_df, object_masks):
     Left object is positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     if obj_df.iloc[0]['Center (x, y)'][0] < obj_df.iloc[1]['Center (x, y)'][0]:
         positive_mask = object_masks[0]
         negative_mask = ~object_masks[0]
@@ -75,9 +85,12 @@ def get_right_obj_pos_others_neg_mask(obj_df, object_masks):
     Right object is positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     if obj_df.iloc[0]['Center (x, y)'][0] > obj_df.iloc[1]['Center (x, y)'][0]:
         positive_mask = object_masks[0]
         negative_mask = ~object_masks[0]
@@ -92,9 +105,12 @@ def get_top_obj_pos_bottom_obj_neg_mask(obj_df, object_masks):
     Top object is positive, bottom object is negative.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     if obj_df.iloc[0]['Center (x, y)'][1] < obj_df.iloc[1]['Center (x, y)'][1]:
         positive_mask = object_masks[0]
@@ -110,9 +126,12 @@ def get_top_obj_pos_others_neg_mask(obj_df, object_masks):
     Top object is positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     mask_dtype = object_masks[0].dtype
     if obj_df.iloc[0]['Center (x, y)'][1] < obj_df.iloc[1]['Center (x, y)'][1]:
         positive_mask = object_masks[0]
@@ -130,9 +149,12 @@ def get_bottom_obj_pos_others_neg_mask(obj_df, object_masks):
     Bottom object is positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     mask_dtype = object_masks[0].dtype
     if obj_df.iloc[0]['Center (x, y)'][1] > obj_df.iloc[1]['Center (x, y)'][1]:
         positive_mask = object_masks[0]
@@ -150,9 +172,12 @@ def get_triangle_pos_others_neg_mask(obj_df, object_masks):
     Triangle objects are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
     for i in range(len(obj_df)):
@@ -175,9 +200,12 @@ def get_circle_pos_others_neg_mask(obj_df, object_masks):
     Circle objects are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
     for i in range(len(obj_df)):
@@ -200,9 +228,12 @@ def get_square_pos_others_neg_mask(obj_df, object_masks):
     Square objects are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
@@ -226,9 +257,12 @@ def get_red_triangle_pos_others_neg_mask(obj_df, object_masks):
     Red triangle objects are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
@@ -253,9 +287,12 @@ def get_red_square_pos_others_neg_mask(obj_df, object_masks):
     Red squares are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
@@ -280,9 +317,12 @@ def get_red_circle_pos_others_neg_mask(obj_df, object_masks):
     Red circles are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
@@ -307,9 +347,12 @@ def get_blue_triangle_pos_others_neg_mask(obj_df, object_masks):
     Blue triangles are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
@@ -334,9 +377,12 @@ def get_blue_square_pos_others_neg_mask(obj_df, object_masks):
     Blue squares are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
@@ -361,9 +407,12 @@ def get_blue_circle_pos_others_neg_mask(obj_df, object_masks):
     Blue circles are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     positive_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)
@@ -388,9 +437,12 @@ def get_red_obj_pos_others_neg_mask(obj_df, object_masks):
     Red objects are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     positive_token_mask = np.zeros_like(object_masks[0], dtype=bool)
     for i in range(len(obj_df)):
@@ -408,9 +460,12 @@ def get_blue_obj_pos_others_neg_mask(obj_df, object_masks):
     Blue objects are positive, others are negative including background.
     Returns positive mask and negative mask.
     """
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     positive_token_mask = np.zeros_like(object_masks[0], dtype=bool)
     for i in range(len(obj_df)):
@@ -429,9 +484,12 @@ def get_obj_pos_others_neg_mask(obj_df, object_masks):
     Returns positive mask and negative mask.
     """
     
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     positive_token_mask = np.zeros_like(object_masks[0], dtype=bool)
     for i in range(len(obj_df)):
@@ -448,9 +506,12 @@ def get_background_pos_obj_neg_mask(obj_df, object_masks):
     Returns positive mask and negative mask.
     """
     
-    if len(obj_df) != 2:
-        # TODO: Not sure how to handle case when there are not exactly 2 objects
-        return np.array([]), np.array([])
+    if len(obj_df) == 0 or object_masks is None or len(object_masks) == 0:
+        return np.zeros(MAP_SHAPE, dtype=float), np.zeros(MAP_SHAPE, dtype=float)
+    elif len(obj_df) != 2 or len(object_masks) != 2:
+        # Handle when not exactly 2 objects
+        mask_dtype = object_masks[0].dtype if len(object_masks) > 0 else float
+        return np.zeros_like(object_masks[0], dtype=mask_dtype), np.zeros_like(object_masks[0], dtype=mask_dtype)
     
     mask_dtype = object_masks[0].dtype
     object_token_mask = np.zeros_like(object_masks[0], dtype=mask_dtype)

@@ -178,11 +178,63 @@ attnvis_store.setup_hooks()
 figdir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objrel_rndembdposemb_DiT_B_pilot/cross_attn_vis_figs"
 os.makedirs(figdir, exist_ok=True)
 # prompt = "red square below and to the left of blue triangle"
-for prompt in ["blue square below and to the left of red triangle", 
-               "red square below and to the left of blue triangle", 
-               "square below and to the left of triangle", 
-               "blue square on top of and to the right of red triangle", 
-               "red square on top of and to the right of blue triangle", ]:
+for prompt in [#"blue square below and to the left of red triangle", 
+               #"red square below and to the left of blue triangle", 
+               #"square below and to the left of triangle", 
+            #    "blue square above and to the right of red triangle", 
+            #    "red square above and to the right of blue triangle", 
+            #    "red square above blue triangle", 
+            #    "red square below blue triangle", 
+            #    "red square is below the blue triangle", 
+               'red square is above and to the left of the blue triangle',
+                'red square is above and to the right of the blue triangle',
+                'red square is below and to the left of the blue triangle',
+                'red square is below and to the right of the blue triangle',
+                'red square is above and to the left of the blue circle',
+                'red square is above and to the right of the blue circle',
+                'red square is below and to the left of the blue circle',
+                'red square is below and to the right of the blue circle',
+                'red triangle is above and to the left of the blue square',
+                'red triangle is above and to the right of the blue square',
+                'red triangle is below and to the left of the blue square',
+                'red triangle is below and to the right of the blue square',
+                'red triangle is above and to the left of the blue circle',
+                'red triangle is above and to the right of the blue circle',
+                'red triangle is below and to the left of the blue circle',
+                'red triangle is below and to the right of the blue circle',
+                'red circle is above and to the left of the blue square',
+                'red circle is above and to the right of the blue square',
+                'red circle is below and to the left of the blue square',
+                'red circle is below and to the right of the blue square',
+                'red circle is above and to the left of the blue triangle',
+                'red circle is above and to the right of the blue triangle',
+                'red circle is below and to the left of the blue triangle',
+                'red circle is below and to the right of the blue triangle',
+                'blue square is above and to the left of the red triangle',
+                'blue square is above and to the right of the red triangle',
+                'blue square is below and to the left of the red triangle',
+                'blue square is below and to the right of the red triangle',
+                'blue square is above and to the left of the red circle',
+                'blue square is above and to the right of the red circle',
+                'blue square is below and to the left of the red circle',
+                'blue square is below and to the right of the red circle',
+                'blue triangle is above and to the left of the red square',
+                'blue triangle is above and to the right of the red square',
+                'blue triangle is below and to the left of the red square',
+                'blue triangle is below and to the right of the red square',
+                'blue triangle is above and to the left of the red circle',
+                'blue triangle is above and to the right of the red circle',
+                'blue triangle is below and to the left of the red circle',
+                'blue triangle is below and to the right of the red circle',
+                'blue circle is above and to the left of the red square',
+                'blue circle is above and to the right of the red square',
+                'blue circle is below and to the left of the red square',
+                'blue circle is below and to the right of the red square',
+                'blue circle is above and to the left of the red triangle',
+                'blue circle is above and to the right of the red triangle',
+                'blue circle is below and to the left of the red triangle',
+                'blue circle is below and to the right of the red triangle'
+                ]:
     print(f"Processing prompt: {prompt}")
     prompt_dir = join(figdir, prompt.replace(" ", "_"))
     os.makedirs(prompt_dir, exist_ok=True)
@@ -212,24 +264,30 @@ for prompt in ["blue square below and to the left of red triangle",
 
     square_cmb_img_msks_vec, _ = create_object_based_masks(output[0].images, get_square_pos_others_neg_mask)
     triangle_cmb_img_msks_vec, _ = create_object_based_masks(output[0].images, get_triangle_pos_others_neg_mask)
+    circle_cmb_img_msks_vec, _ = create_object_based_masks(output[0].images, get_circle_pos_others_neg_mask)
     background_cmb_img_msks_vec, _ = create_object_based_masks(output[0].images, get_background_pos_obj_neg_mask)
     imgmsk_collection = {
         "square": square_cmb_img_msks_vec,
         "triangle": triangle_cmb_img_msks_vec,
+        "circle": circle_cmb_img_msks_vec,
         "background": background_cmb_img_msks_vec,
     }
-    for imgtoken_type in ["square", "triangle", "background"]:
+    for imgtoken_type in ["square", "triangle", "circle", "background"]:
         imgtoken_msk_vec = imgmsk_collection[imgtoken_type]
+        if imgtoken_msk_vec.sum() == 0:
+            print(f"No image mask for {imgtoken_type}, skipping...")
+            continue
         for text_targets in [["square"], 
                             ["triangle"], 
+                            ["circle"], 
                             ["red"], 
                             ["blue"],
-                            ["below", "left", "top", "right"],
+                            ["below", "left", "top", "right", "above"],
                             ["below", ],
                             ["left", ],
-                            ["top", ],
+                            ["above", ],
                             ["right", ],
-                            ["and", "to", "the", "of", "on"],
+                            ["and", "to", "the", "of", "on", "is"],
                             ]:
             template_type = f"image {imgtoken_type} to text {' '.join(text_targets)}"
             text_mask = create_multi_hot_token_mask(token_splits, text_targets, seq_len=20)
