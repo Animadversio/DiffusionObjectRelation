@@ -101,6 +101,24 @@ def print_top_k_scores(scores, k=10, title="Top scores"):
         layer_head_idx = idx // remaining_size
         layer_idx, head_idx = divmod(layer_head_idx.item(), n_heads)
         print(f"Top{i+1}: L{layer_idx}H{head_idx}, Score: {value:.2f}")
+        
+        
+def test_product_prompt_list():
+    from itertools import product
+    colors = ['red', 'blue']
+    target_shapes = ['square', 'triangle', 'circle']
+    verticals = ['above', 'below']
+    horizontals = ['to the left of', 'to the right of']
+    prompts = []
+    for c1, c2 in product(colors, colors):
+        if c1 == c2:      # skip same‐color pairs
+            continue
+        for shape1, shape2 in product(target_shapes, target_shapes):
+            if shape1 == shape2:
+                continue
+            for v, h in product(verticals, horizontals):
+                prompts.append(f"{c1} {shape1} is {v} and {h} the {c2} {shape2}")
+    return prompts
 #%%
 
 savedir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot"
@@ -186,50 +204,98 @@ for prompt in [#"blue square below and to the left of red triangle",
             #    "red square above blue triangle", 
             #    "red square below blue triangle", 
             #    "red square is below the blue triangle", 
-               'red square is above and to the left of the blue triangle',
+               'red square is above the blue triangle',
+                'red square is below the blue triangle',
+                'red square is to the left of the blue triangle',
+                'red square is to the right of the blue triangle',
+                'red square is above and to the left of the blue triangle',
                 'red square is above and to the right of the blue triangle',
                 'red square is below and to the left of the blue triangle',
                 'red square is below and to the right of the blue triangle',
+                'red square is above the blue circle',
+                'red square is below the blue circle',
+                'red square is to the left of the blue circle',
+                'red square is to the right of the blue circle',
                 'red square is above and to the left of the blue circle',
                 'red square is above and to the right of the blue circle',
                 'red square is below and to the left of the blue circle',
                 'red square is below and to the right of the blue circle',
+                'red triangle is above the blue square',
+                'red triangle is below the blue square',
+                'red triangle is to the left of the blue square',
+                'red triangle is to the right of the blue square',
                 'red triangle is above and to the left of the blue square',
                 'red triangle is above and to the right of the blue square',
                 'red triangle is below and to the left of the blue square',
                 'red triangle is below and to the right of the blue square',
+                'red triangle is above the blue circle',
+                'red triangle is below the blue circle',
+                'red triangle is to the left of the blue circle',
+                'red triangle is to the right of the blue circle',
                 'red triangle is above and to the left of the blue circle',
                 'red triangle is above and to the right of the blue circle',
                 'red triangle is below and to the left of the blue circle',
                 'red triangle is below and to the right of the blue circle',
+                'red circle is above the blue square',
+                'red circle is below the blue square',
+                'red circle is to the left of the blue square',
+                'red circle is to the right of the blue square',
                 'red circle is above and to the left of the blue square',
                 'red circle is above and to the right of the blue square',
                 'red circle is below and to the left of the blue square',
                 'red circle is below and to the right of the blue square',
+                'red circle is above the blue triangle',
+                'red circle is below the blue triangle',
+                'red circle is to the left of the blue triangle',
+                'red circle is to the right of the blue triangle',
                 'red circle is above and to the left of the blue triangle',
                 'red circle is above and to the right of the blue triangle',
                 'red circle is below and to the left of the blue triangle',
                 'red circle is below and to the right of the blue triangle',
+                'blue square is above the red triangle',
+                'blue square is below the red triangle',
+                'blue square is to the left of the red triangle',
+                'blue square is to the right of the red triangle',
                 'blue square is above and to the left of the red triangle',
                 'blue square is above and to the right of the red triangle',
                 'blue square is below and to the left of the red triangle',
                 'blue square is below and to the right of the red triangle',
+                'blue square is above the red circle',
+                'blue square is below the red circle',
+                'blue square is to the left of the red circle',
+                'blue square is to the right of the red circle',
                 'blue square is above and to the left of the red circle',
                 'blue square is above and to the right of the red circle',
                 'blue square is below and to the left of the red circle',
                 'blue square is below and to the right of the red circle',
+                'blue triangle is above the red square',
+                'blue triangle is below the red square',
+                'blue triangle is to the left of the red square',
+                'blue triangle is to the right of the red square',
                 'blue triangle is above and to the left of the red square',
                 'blue triangle is above and to the right of the red square',
                 'blue triangle is below and to the left of the red square',
                 'blue triangle is below and to the right of the red square',
+                'blue triangle is above the red circle',
+                'blue triangle is below the red circle',
+                'blue triangle is to the left of the red circle',
+                'blue triangle is to the right of the red circle',
                 'blue triangle is above and to the left of the red circle',
                 'blue triangle is above and to the right of the red circle',
                 'blue triangle is below and to the left of the red circle',
                 'blue triangle is below and to the right of the red circle',
+                'blue circle is above the red square',
+                'blue circle is below the red square',
+                'blue circle is to the left of the red square',
+                'blue circle is to the right of the red square',
                 'blue circle is above and to the left of the red square',
                 'blue circle is above and to the right of the red square',
                 'blue circle is below and to the left of the red square',
                 'blue circle is below and to the right of the red square',
+                'blue circle is above the red triangle',
+                'blue circle is below the red triangle',
+                'blue circle is to the left of the red triangle',
+                'blue circle is to the right of the red triangle',
                 'blue circle is above and to the left of the red triangle',
                 'blue circle is above and to the right of the red triangle',
                 'blue circle is below and to the left of the red triangle',
@@ -238,7 +304,7 @@ for prompt in [#"blue square below and to the left of red triangle",
     print(f"Processing prompt: {prompt}")
     prompt_dir = join(figdir, prompt.replace(" ", "_"))
     os.makedirs(prompt_dir, exist_ok=True)
-    n_samples = 36
+    n_samples = 49
     attnvis_store.clear_activation()
     output = pipeline(prompt, 
             num_inference_steps=14,
@@ -302,6 +368,17 @@ for prompt in [#"blue square below and to the left of red triangle",
             saveallforms(prompt_dir, f"cross_attn_layer_head_step_cond_heatmap_{template_type.replace(' ', '_')}", figh=fig)
             figh, cond_stats, uncond_stats = plot_layer_head_score_summary(template_similarity_scores, f"{template_type}\n{prompt}", step_sum_type="max", share_clim=True);
             saveallforms(prompt_dir, f"cross_attn_layer_head_maxstep_summary_{template_type.replace(' ', '_')}", figh=figh)
+            th.save({
+                "cond_stats": cond_stats,
+                "uncond_stats": uncond_stats,
+                "template_similarity_scores": template_similarity_scores,
+                "text_mask": text_mask,
+                "imgtoken_msk_vec": imgtoken_msk_vec,
+                "prompt": prompt,
+                "template_type": template_type,
+                "text_targets": text_targets,
+                "imgtoken_type": imgtoken_type,
+            }, join(prompt_dir, f"cross_attn_layer_head_step_stats_{template_type.replace(' ', '_')}.pt"))
             print_top_k_scores(cond_stats, k=8, title=f"Top Heads {template_type} | {prompt}");
             with open(join(prompt_dir, f"top_cross_attn_heads_{template_type.replace(' ', '_')}.txt"), "w") as f:
                 with redirect_stdout(f):
