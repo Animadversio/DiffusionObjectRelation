@@ -115,3 +115,13 @@ torchrun --nproc_per_node=1 \
     --report_to "tensorboard" \
     --loss_report_name "train_loss"
 
+
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/binxuwang/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_T5_prompt20_training_from_scratch.py \
+    --work-dir $STORE_DIR"/DL_Projects/PixArt/results/objrel_T5_DiT_B_pilot/" \
+    --resume-from $STORE_DIR"/DL_Projects/PixArt/results/objrel_T5_DiT_B_pilot/checkpoints/epoch_1400_step_56000.pth" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
