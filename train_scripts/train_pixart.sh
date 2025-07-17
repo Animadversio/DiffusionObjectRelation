@@ -97,6 +97,13 @@ torchrun --nproc_per_node=1 \
     --loss_report_name "train_loss"
 
 
+# train conditional diffusion on dataset of single object images. POC: Hannah
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_single_T5_prompt20_training_from_scratch.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_DiT_B_pilot/" \
+
 # train conditional diffusion with random embedding, with positional embedding 
 cd ~/Github/DiffusionObjectRelation
 torchrun --nproc_per_node=1 \
