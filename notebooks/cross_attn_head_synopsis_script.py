@@ -164,8 +164,9 @@ for i, row in prompt_df.iterrows():
 # sns.heatmap(cond_stats_array.mean(axis=0))
 # plt.show()
 #%%
-model_run_name = "objrel_rndembdposemb_DiT_mini_pilot"
 model_run_name = "objrel2_DiT_B_pilot"
+model_run_name = "objrel_rndembdposemb_DiT_mini_pilot"
+model_run_name = "objrel_rndembdposemb_DiT_micro_pilot"
 figroot = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}/cross_attn_vis_figs"
 synfigdir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}/synopsis"
 os.makedirs(synfigdir, exist_ok=True)
@@ -548,7 +549,291 @@ plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_object_to_relation_left_right_shape_order_split", fig)
 plt.show()
 
+# %% Shape1 -> Shape2
+#%%
+img_src_str = "shape1"
+text_target_str = "shape2"
+fig, axs = plt.subplots(2, 3, figsize=(12, 8), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape1 == 'square' and color1 == 'blue'",
+    "shape1 == 'circle' and color1 == 'blue'",
+    "shape1 == 'triangle' and color1 == 'blue'",
+    "shape1 == 'square' and color1 == 'red'",
+    "shape1 == 'circle' and color1 == 'red'",
+    "shape1 == 'triangle' and color1 == 'red'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
+
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for shape 1 -> Text of shape2", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_shape2_color_shape_order_split", fig)
+plt.show()
 # %%
+img_src_str = "shape2"
+text_target_str = "shape1"
+fig, axs = plt.subplots(2, 3, figsize=(12, 8), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape2 == 'square' and color2 == 'blue'",
+    "shape2 == 'circle' and color2 == 'blue'",
+    "shape2 == 'triangle' and color2 == 'blue'",
+    "shape2 == 'square' and color2 == 'red'",
+    "shape2 == 'circle' and color2 == 'red'",
+    "shape2 == 'triangle' and color2 == 'red'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
 
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for shape 2 -> Text of shape1", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_shape1_color_shape_order_split", fig)
+plt.show()
+# %%
+img_src_str = "shape2"
+text_target_str = "shape1"
+fig, axs = plt.subplots(4, 3, figsize=(12, 16), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape2 == 'square' and color2 == 'blue' and shape1 == 'circle'",
+    "shape2 == 'circle' and color2 == 'blue' and shape1 == 'triangle'",
+    "shape2 == 'triangle' and color2 == 'blue' and shape1 == 'square'",
+    "shape2 == 'square' and color2 == 'blue' and shape1 == 'triangle'",
+    "shape2 == 'circle' and color2 == 'blue' and shape1 == 'square'",
+    "shape2 == 'triangle' and color2 == 'blue' and shape1 == 'circle'",
+    "shape2 == 'square' and color2 == 'red' and shape1 == 'circle'",
+    "shape2 == 'circle' and color2 == 'red' and shape1 == 'triangle'",
+    "shape2 == 'triangle' and color2 == 'red' and shape1 == 'square'",
+    "shape2 == 'square' and color2 == 'red' and shape1 == 'triangle'",
+    "shape2 == 'circle' and color2 == 'red' and shape1 == 'square'",
+    "shape2 == 'triangle' and color2 == 'red' and shape1 == 'circle'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
 
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=').replace(' and ', ' & ').replace('shape', 'S').replace('color', 'C')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for shape 2 -> Text of shape1", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_shape1_color_shape_shape_order_split", fig)
+plt.show()
+# %%
+img_src_str = "shape1"
+text_target_str = "shape2"
+fig, axs = plt.subplots(4, 3, figsize=(12, 16), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape2 == 'square' and color2 == 'blue' and shape1 == 'circle'",
+    "shape2 == 'circle' and color2 == 'blue' and shape1 == 'triangle'",
+    "shape2 == 'triangle' and color2 == 'blue' and shape1 == 'square'",
+    "shape2 == 'square' and color2 == 'blue' and shape1 == 'triangle'",
+    "shape2 == 'circle' and color2 == 'blue' and shape1 == 'square'",
+    "shape2 == 'triangle' and color2 == 'blue' and shape1 == 'circle'",
+    "shape2 == 'square' and color2 == 'red' and shape1 == 'circle'",
+    "shape2 == 'circle' and color2 == 'red' and shape1 == 'triangle'",
+    "shape2 == 'triangle' and color2 == 'red' and shape1 == 'square'",
+    "shape2 == 'square' and color2 == 'red' and shape1 == 'triangle'",
+    "shape2 == 'circle' and color2 == 'red' and shape1 == 'square'",
+    "shape2 == 'triangle' and color2 == 'red' and shape1 == 'circle'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
 
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=').replace(' and ', ' & ').replace('shape', 'S').replace('color', 'C')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for shape 1 -> Text of shape2", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_shape2_color_shape_shape_order_split", fig)
+plt.show()
+# %%
+### Object to corresponding color
+#%%
+img_src_str = "shape2"
+text_target_str = "color2"
+fig, axs = plt.subplots(2, 3, figsize=(12, 8), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape2 == 'square' and color2 == 'blue'",
+    "shape2 == 'circle' and color2 == 'blue'",
+    "shape2 == 'triangle' and color2 == 'blue'",
+    "shape2 == 'square' and color2 == 'red'",
+    "shape2 == 'circle' and color2 == 'red'",
+    "shape2 == 'triangle' and color2 == 'red'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
+
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for Shape2 -> Text Color2", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_color2_color_shape2_color2_order_split", fig)
+plt.show()
+# %%
+img_src_str = "shape1"
+text_target_str = "color1"
+fig, axs = plt.subplots(2, 3, figsize=(12, 8), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape1 == 'square' and color1 == 'blue'",
+    "shape1 == 'circle' and color1 == 'blue'",
+    "shape1 == 'triangle' and color1 == 'blue'",
+    "shape1 == 'square' and color1 == 'red'",
+    "shape1 == 'circle' and color1 == 'red'",
+    "shape1 == 'triangle' and color1 == 'red'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
+
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for Shape1 -> Text Color1", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_color1_color_shape1_color1_order_split", fig)
+plt.show()
+# %%
+img_src_str = "shape2"
+text_target_str = "color1"
+fig, axs = plt.subplots(2, 3, figsize=(12, 8), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape2 == 'square' and color2 == 'blue'",
+    "shape2 == 'circle' and color2 == 'blue'",
+    "shape2 == 'triangle' and color2 == 'blue'",
+    "shape2 == 'square' and color2 == 'red'",
+    "shape2 == 'circle' and color2 == 'red'",
+    "shape2 == 'triangle' and color2 == 'red'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
+
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for Shape2 -> Text Color1", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_color1_color_shape2_color1_order_split", fig)
+plt.show()
+
+# %%
+img_src_str = "shape1"
+text_target_str = "color2"
+fig, axs = plt.subplots(2, 3, figsize=(12, 8), squeeze=False)
+axs = axs.flatten()
+for query_idx, query_str in enumerate([
+    "shape1 == 'square' and color1 == 'blue'",
+    "shape1 == 'circle' and color1 == 'blue'",
+    "shape1 == 'triangle' and color1 == 'blue'",
+    "shape1 == 'square' and color1 == 'red'",
+    "shape1 == 'circle' and color1 == 'red'",
+    "shape1 == 'triangle' and color1 == 'red'",
+]):
+    prompt_part_df = prompt_df.query(query_str)
+    cond_stats_list = []
+    for r_idx in range(len(prompt_part_df)):
+        row = prompt_part_df.iloc[r_idx]
+        prompt = row["prompt"]
+        img_src = row[img_src_str] if img_src_str in row.keys() else img_src_str
+        text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
+        prompt_dir = join(figroot, prompt.replace(" ", "_"))
+        attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
+        attn_stats = th.load(attn_stats_file, weights_only=False)
+        cond_stats = attn_stats["cond_stats"]
+        cond_stats_list.append(cond_stats)
+
+    cond_stats_array = np.stack(cond_stats_list, axis=0)
+    plt.sca(axs[query_idx])
+    sns.heatmap(cond_stats_array.mean(axis=0))
+    plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
+plt.suptitle("Cross-Attention Head Synopses | Img token for Shape1 -> Text Color2", fontsize=12)
+plt.tight_layout()
+saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_color2_color_shape1_color2_order_split", fig)
+plt.show()
