@@ -125,17 +125,36 @@ def test_product_prompt_list():
 model_run_name = "objrel2_DiT_B_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
 ckpt_name = "epoch_2000_step_80000.pth" # "epoch_4000_step_160000.pth"  
 text_encoder_type = "T5"
+suffix = ""
 
 model_run_name = "objrel_rndembdposemb_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
 model_run_name = "objrel_rndembdposemb_DiT_micro_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
 ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
 text_encoder_type = "RandomEmbeddingEncoder_wPosEmb"
+suffix = ""
+
+model_run_name = "objrel_rndembdposemb_DiT_micro_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
+text_encoder_type = "RandomEmbeddingEncoder_wPosEmb"
+suffix = ""
+
+
+model_run_name = "objrel_T5_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
+text_encoder_type = "T5"
+suffix = ""
+
+model_run_name = "objrel_rndembdposemb_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+ckpt_name = "epoch_1600_step_64000.pth" # "epoch_4000_step_160000.pth" 
+text_encoder_type = "RandomEmbeddingEncoder_wPosEmb" 
+suffix = "_ep1600"
+
 
 text_feat_dir_old = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRel_pilot_rndemb/caption_feature_wmask'
 T5_path = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts/t5-v1_1-xxl"
 
 savedir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/{model_run_name}"
-figdir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}/cross_attn_vis_figs"
+figdir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}{suffix}/cross_attn_vis_figs"
 os.makedirs(figdir, exist_ok=True)
 
 tokenizer = T5Tokenizer.from_pretrained(T5_path, )#subfolder="tokenizer")

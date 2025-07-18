@@ -167,6 +167,8 @@ for i, row in prompt_df.iterrows():
 model_run_name = "objrel2_DiT_B_pilot"
 model_run_name = "objrel_rndembdposemb_DiT_mini_pilot"
 model_run_name = "objrel_rndembdposemb_DiT_micro_pilot"
+model_run_name = "objrel_T5_DiT_mini_pilot"
+model_run_name = "objrel_rndembdposemb_DiT_mini_pilot_ep1600"
 figroot = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}/cross_attn_vis_figs"
 synfigdir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}/synopsis"
 os.makedirs(synfigdir, exist_ok=True)
