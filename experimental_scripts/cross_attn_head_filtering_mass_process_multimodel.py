@@ -121,6 +121,28 @@ def test_product_prompt_list():
     return prompts
 
 #%%
+import argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Cross attention head filtering for multiple models')
+    parser.add_argument('--model_run_name', type=str, required=True,
+                        help='Name of the model run (e.g., objrel_T5_DiT_B_pilot)')
+    parser.add_argument('--ckpt_name', type=str, required=True,
+                        help='Checkpoint name (e.g., epoch_4000_step_160000.pth)')
+    parser.add_argument('--text_encoder_type', type=str, required=True,
+                        choices=['T5', 'RandomEmbeddingEncoder_wPosEmb'],
+                        help='Type of text encoder to use')
+    parser.add_argument('--suffix', type=str, default='',
+                        help='Suffix for output directory naming')
+    return parser.parse_args()
+
+#%%
+args = parse_args()
+model_run_name = args.model_run_name
+ckpt_name = args.ckpt_name
+text_encoder_type = args.text_encoder_type
+suffix = args.suffix
+#%%
 # savedir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot"
 model_run_name = "objrel2_DiT_B_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
 ckpt_name = "epoch_2000_step_80000.pth" # "epoch_4000_step_160000.pth"  
@@ -149,7 +171,12 @@ ckpt_name = "epoch_1600_step_64000.pth" # "epoch_4000_step_160000.pth"
 text_encoder_type = "RandomEmbeddingEncoder_wPosEmb" 
 suffix = "_ep1600"
 
+model_run_name = "objrel_T5_DiT_B_pilot"
+ckpt_name = "epoch_4000_step_160000.pth"
+text_encoder_type = "T5"
+suffix = ""
 
+#%%
 text_feat_dir_old = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRel_pilot_rndemb/caption_feature_wmask'
 T5_path = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts/t5-v1_1-xxl"
 
