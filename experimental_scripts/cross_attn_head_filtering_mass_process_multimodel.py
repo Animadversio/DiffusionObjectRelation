@@ -173,6 +173,9 @@ suffix = "_ep1600"
 
 model_run_name = "objrel_T5_DiT_B_pilot"
 ckpt_name = "epoch_4000_step_160000.pth"
+ckpt_name = "epoch_1400_step_56000.pth"
+ckpt_name = "epoch_1800_step_72000.pth"
+ckpt_name = "epoch_2400_step_96000.pth"
 text_encoder_type = "T5"
 suffix = ""
 
@@ -194,7 +197,7 @@ elif text_encoder_type == "RandomEmbeddingEncoder_wPosEmb":
                                                 emb_data["dict_ids2input_ids"], 
                                                 max_seq_len=20, embed_dim=4096,
                                                 wpe_scale=1/6).to("cuda")
-
+torch.cuda.empty_cache()
 config = read_config(join(savedir, 'config.py'))
 weight_dtype = torch.float32
 if config.mixed_precision == "fp16": # accelerator.
@@ -247,6 +250,7 @@ pipeline = PixArtAlphaPipeline_custom.from_pretrained(
 ckptdir = join(savedir, "checkpoints")
 ckpt = torch.load(join(ckptdir, ckpt_name))
 pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict_ema']))
+# pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict']))
 pipeline.tokenizer = tokenizer
 pipeline.text_encoder = text_encoder
 pipeline.to(device="cuda", dtype=weight_dtype);
@@ -255,6 +259,7 @@ pipeline.to(device="cuda", dtype=weight_dtype);
 pipeline.transformer = replace_attn_processor(pipeline.transformer)
 attnvis_store = PixArtAttentionVisualizer_Store(pipeline)
 attnvis_store.setup_hooks()
+torch.cuda.empty_cache()
 
 #%%
 # prompt = "red square below and to the left of blue triangle"
@@ -439,3 +444,5 @@ for prompt in ['red square is above the blue triangle',
                     print_top_k_scores(cond_stats, k=8, title=f"Top Heads {template_type} | {prompt}");
             print(f"Saved {template_type} to {prompt_dir}")
             plt.close("all")
+
+# %%
