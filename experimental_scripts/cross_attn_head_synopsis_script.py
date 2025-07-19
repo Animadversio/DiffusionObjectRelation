@@ -169,6 +169,9 @@ model_run_name = "objrel_rndembdposemb_DiT_mini_pilot"
 model_run_name = "objrel_rndembdposemb_DiT_micro_pilot"
 model_run_name = "objrel_T5_DiT_mini_pilot"
 model_run_name = "objrel_rndembdposemb_DiT_mini_pilot_ep1600"
+model_run_name = "objrel_T5_DiT_mini_pilot_WDecay"
+model_run_name = "objrel_T5_DiT_B_pilot"
+model_run_name = "objrel_T5_DiT_B_pilot_WDecay"
 figroot = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}/cross_attn_vis_figs"
 synfigdir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}/synopsis"
 os.makedirs(synfigdir, exist_ok=True)
@@ -261,9 +264,13 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
@@ -295,9 +302,13 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             text_target = row["relation"][-1] 
             prompt_dir = join(figroot, prompt.replace(" ", "_"))
             attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-            attn_stats = th.load(attn_stats_file, weights_only=False)
-            cond_stats = attn_stats["cond_stats"]
-            cond_stats_list.append(cond_stats)
+            if os.path.exists(attn_stats_file):
+                attn_stats = th.load(attn_stats_file, weights_only=False)
+                cond_stats = attn_stats["cond_stats"]
+                cond_stats_list.append(cond_stats)
+            else:
+                print(f"Attn stats file not found: {attn_stats_file}")
+                continue
 
         cond_stats_array = np.stack(cond_stats_list, axis=0)
         plt.sca(axs[src_idx, query_idx])
@@ -331,9 +342,13 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             text_target = row["relation"][-1] 
             prompt_dir = join(figroot, prompt.replace(" ", "_"))
             attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-            attn_stats = th.load(attn_stats_file, weights_only=False)
-            cond_stats = attn_stats["cond_stats"]
-            cond_stats_list.append(cond_stats)
+            if os.path.exists(attn_stats_file):
+                attn_stats = th.load(attn_stats_file, weights_only=False)
+                cond_stats = attn_stats["cond_stats"]
+                cond_stats_list.append(cond_stats)
+            else:
+                print(f"Attn stats file not found: {attn_stats_file}")
+                continue
 
         cond_stats_array = np.stack(cond_stats_list, axis=0)
         plt.sca(axs[src_idx, query_idx])
@@ -342,7 +357,7 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             plt.title(f"Shape1 -> Text relation | {query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
         else:
             plt.title(f"Shape2 -> Text relation | {query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for object -> Text relation", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for object -> Text relation\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_object_to_relation_color_order_split", fig)
 plt.show()
@@ -368,9 +383,13 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             text_target = row["relation"][-1] 
             prompt_dir = join(figroot, prompt.replace(" ", "_"))
             attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-            attn_stats = th.load(attn_stats_file, weights_only=False)
-            cond_stats = attn_stats["cond_stats"]
-            cond_stats_list.append(cond_stats)
+            if os.path.exists(attn_stats_file):
+                attn_stats = th.load(attn_stats_file, weights_only=False)
+                cond_stats = attn_stats["cond_stats"]
+                cond_stats_list.append(cond_stats)
+            else:
+                print(f"Attn stats file not found: {attn_stats_file}")
+                continue
 
         cond_stats_array = np.stack(cond_stats_list, axis=0)
         plt.sca(axs[src_idx, query_idx])
@@ -379,7 +398,7 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             plt.title(f"Shape1 -> Text relation | {query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
         else:
             plt.title(f"Shape2 -> Text relation | {query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for object -> Text relation", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for object -> Text relation\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_object_to_relation_shape_order_split", fig)
 plt.show()
@@ -416,9 +435,13 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             text_target = "_".join(["below", "left", "top", "right", "above"]) #row["relation"][-1] 
             prompt_dir = join(figroot, prompt.replace(" ", "_"))
             attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-            attn_stats = th.load(attn_stats_file, weights_only=False)
-            cond_stats = attn_stats["cond_stats"]
-            cond_stats_list.append(cond_stats)
+            if os.path.exists(attn_stats_file):
+                attn_stats = th.load(attn_stats_file, weights_only=False)
+                cond_stats = attn_stats["cond_stats"]
+                cond_stats_list.append(cond_stats)
+            else:
+                print(f"Attn stats file not found: {attn_stats_file}")
+                continue
 
         cond_stats_array = np.stack(cond_stats_list, axis=0)
         plt.sca(axs[src_idx, query_idx])
@@ -427,7 +450,7 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             plt.title(f"Shape1 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel')} | N={len(prompt_part_df)}")
         else:
             plt.title(f"Shape2 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for object -> Text relation", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for object -> Text relation\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_object_to_relation_relation_order_split", fig)
 plt.show()
@@ -457,9 +480,13 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             text_target = row["relation"][-1] # "_".join(["below", "left", "top", "right", "above"]) #
             prompt_dir = join(figroot, prompt.replace(" ", "_"))
             attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-            attn_stats = th.load(attn_stats_file, weights_only=False)
-            cond_stats = attn_stats["cond_stats"]
-            cond_stats_list.append(cond_stats)
+            if os.path.exists(attn_stats_file):
+                attn_stats = th.load(attn_stats_file, weights_only=False)
+                cond_stats = attn_stats["cond_stats"]
+                cond_stats_list.append(cond_stats)
+            else:
+                print(f"Attn stats file not found: {attn_stats_file}")
+                continue
 
         cond_stats_array = np.stack(cond_stats_list, axis=0)
         plt.sca(axs[src_idx, query_idx])
@@ -468,7 +495,7 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             plt.title(f"Shape1 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel')} | N={len(prompt_part_df)}")
         else:
             plt.title(f"Shape2 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for object -> Text relation", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for object -> Text relation\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_object_to_relation_relation_order_split_last_word", fig)
 plt.show()
@@ -496,9 +523,13 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             text_target = "_".join(["below", "left", "top", "right", "above"]) #row["relation"][-1] # 
             prompt_dir = join(figroot, prompt.replace(" ", "_"))
             attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-            attn_stats = th.load(attn_stats_file, weights_only=False)
-            cond_stats = attn_stats["cond_stats"]
-            cond_stats_list.append(cond_stats)
+            if os.path.exists(attn_stats_file):
+                attn_stats = th.load(attn_stats_file, weights_only=False)
+                cond_stats = attn_stats["cond_stats"]
+                cond_stats_list.append(cond_stats)
+            else:
+                print(f"Attn stats file not found: {attn_stats_file}")
+                continue
 
         cond_stats_array = np.stack(cond_stats_list, axis=0)
         plt.sca(axs[src_idx, query_idx])
@@ -507,7 +538,7 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             plt.title(f"Shape1 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel').replace('shape1','S1').replace('shape2','S2').replace('and','&')} | N={len(prompt_part_df)}")
         else:
             plt.title(f"Shape2 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel').replace('shape1','S1').replace('shape2','S2').replace('and','&')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for object -> Text relation", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for object -> Text relation\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_object_to_relation_above_below_shape_order_split", fig)
 plt.show()
@@ -535,9 +566,13 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             text_target = row["relation"][-1] # "_".join(["below", "left", "top", "right", "above"]) #
             prompt_dir = join(figroot, prompt.replace(" ", "_"))
             attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-            attn_stats = th.load(attn_stats_file, weights_only=False)
-            cond_stats = attn_stats["cond_stats"]
-            cond_stats_list.append(cond_stats)
+            if os.path.exists(attn_stats_file):
+                attn_stats = th.load(attn_stats_file, weights_only=False)
+                cond_stats = attn_stats["cond_stats"]
+                cond_stats_list.append(cond_stats)
+            else:
+                print(f"Attn stats file not found: {attn_stats_file}")
+                continue
 
         cond_stats_array = np.stack(cond_stats_list, axis=0)
         plt.sca(axs[src_idx, query_idx])
@@ -546,7 +581,7 @@ for src_idx, img_src_str in enumerate(["shape1", "shape2"]):
             plt.title(f"Shape1 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel').replace('shape1','S1').replace('shape2','S2').replace('and','&')} | N={len(prompt_part_df)}")
         else:
             plt.title(f"Shape2 -> Text relation | {query_str.replace(' == ', '=').replace('relation_str','rel').replace('shape1','S1').replace('shape2','S2').replace('and','&')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for object -> Text relation", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for object -> Text relation\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_object_to_relation_left_right_shape_order_split", fig)
 plt.show()
@@ -574,15 +609,19 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for shape 1 -> Text of shape2", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for shape 1 -> Text of shape2\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_shape2_color_shape_order_split", fig)
 plt.show()
@@ -608,15 +647,19 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for shape 2 -> Text of shape1", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for shape 2 -> Text of shape1\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_shape1_color_shape_order_split", fig)
 plt.show()
@@ -648,15 +691,19 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=').replace(' and ', ' & ').replace('shape', 'S').replace('color', 'C')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for shape 2 -> Text of shape1", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for shape 2 -> Text of shape1\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_shape1_color_shape_shape_order_split", fig)
 plt.show()
@@ -688,15 +735,19 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=').replace(' and ', ' & ').replace('shape', 'S').replace('color', 'C')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for shape 1 -> Text of shape2", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for shape 1 -> Text of shape2\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_shape2_color_shape_shape_order_split", fig)
 plt.show()
@@ -724,15 +775,19 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for Shape2 -> Text Color2", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for Shape2 -> Text Color2\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_color2_color_shape2_color2_order_split", fig)
 plt.show()
@@ -758,15 +813,19 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for Shape1 -> Text Color1", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for Shape1 -> Text Color1\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_color1_color_shape1_color1_order_split", fig)
 plt.show()
@@ -792,15 +851,19 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for Shape2 -> Text Color1", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for Shape2 -> Text Color1\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape2_to_color1_color_shape2_color1_order_split", fig)
 plt.show()
@@ -827,15 +890,21 @@ for query_idx, query_str in enumerate([
         text_target = row[text_target_str] if text_target_str in row.keys() else text_target_str
         prompt_dir = join(figroot, prompt.replace(" ", "_"))
         attn_stats_file = join(prompt_dir, f"cross_attn_layer_head_step_stats_image_{img_src}_to_text_{text_target}.pt")
-        attn_stats = th.load(attn_stats_file, weights_only=False)
-        cond_stats = attn_stats["cond_stats"]
-        cond_stats_list.append(cond_stats)
+        if os.path.exists(attn_stats_file):
+            attn_stats = th.load(attn_stats_file, weights_only=False)
+            cond_stats = attn_stats["cond_stats"]
+            cond_stats_list.append(cond_stats)
+        else:
+            print(f"Attn stats file not found: {attn_stats_file}")
+            continue
 
     cond_stats_array = np.stack(cond_stats_list, axis=0)
     plt.sca(axs[query_idx])
     sns.heatmap(cond_stats_array.mean(axis=0))
     plt.title(f"{query_str.replace(' == ', '=')} | N={len(prompt_part_df)}")
-plt.suptitle("Cross-Attention Head Synopses | Img token for Shape1 -> Text Color2", fontsize=12)
+plt.suptitle(f"Cross-Attention Head Synopses | Img token for Shape1 -> Text Color2\n{model_run_name}", fontsize=12)
 plt.tight_layout()
 saveallforms(synfigdir, "cross_attn_head_synopsis_shape1_to_color2_color_shape1_color2_order_split", fig)
 plt.show()
+
+# %%
