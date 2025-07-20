@@ -21,6 +21,8 @@ from torch.utils.data import RandomSampler
 current_file_path = Path(__file__).resolve()
 sys.path.insert(0, str(current_file_path.parent.parent))
 sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/utils")
+sys.path.append("/n/home12/hjkim/Github/DiffusionObjectRelation/utils")
+sys.path.append("/n/home12/hjkim/Github/DiffusionObjectRelation/")
 from pixart_utils import state_dict_convert
 from image_utils import pil_images_to_grid
 

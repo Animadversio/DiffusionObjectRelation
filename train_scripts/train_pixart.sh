@@ -96,3 +96,48 @@ torchrun --nproc_per_node=1 \
     --report_to "tensorboard" \
     --loss_report_name "train_loss"
 
+
+# train conditional diffusion on dataset of single object images. POC: Hannah
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_single_T5_prompt20_training_from_scratch.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_DiT_B_pilot/" \
+
+# train conditional diffusion with random embedding, with positional embedding 
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/binxuwang/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_mini_img128_internal_objrelation_T5_prompt20_training_from_scratch.py \
+    --work-dir $STORE_DIR"/DL_Projects/PixArt/results/objrel_T5_DiT_mini_pilot/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/binxuwang/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_mini_WDecay_img128_internal_objrelation_T5_prompt20_training_from_scratch.py \
+    --work-dir $STORE_DIR"/DL_Projects/PixArt/results/objrel_T5_DiT_mini_pilot_WDecay/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+
+
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/binxuwang/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_T5_prompt20_training_from_scratch.py \
+    --work-dir $STORE_DIR"/DL_Projects/PixArt/results/objrel_T5_DiT_B_pilot/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/binxuwang/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_T5_prompt20_training_from_scratch.py \
+    --work-dir $STORE_DIR"/DL_Projects/PixArt/results/objrel_T5_DiT_B_pilot/" \
+    --resume-from $STORE_DIR"/DL_Projects/PixArt/results/objrel_T5_DiT_B_pilot/checkpoints/epoch_1400_step_56000.pth" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
