@@ -1,6 +1,6 @@
 #%%
-%load_ext autoreload
-%autoreload 2
+# %load_ext autoreload
+# %autoreload 2
 #%%
 import os
 from os.path import join
@@ -132,6 +132,10 @@ def parse_args():
     parser.add_argument('--text_encoder_type', type=str, required=True,
                         choices=['T5', 'RandomEmbeddingEncoder_wPosEmb'],
                         help='Type of text encoder to use')
+    # the new default is bfloat16, float16 may cause wrong generation. 
+    parser.add_argument('--T5_dtype', type=str, default='bfloat16',
+                        choices=['bfloat16', 'float16', 'float32'],
+                        help='Data type for T5 encoder')
     parser.add_argument('--suffix', type=str, default='',
                         help='Suffix for output directory naming')
     return parser.parse_args()
@@ -144,40 +148,40 @@ text_encoder_type = args.text_encoder_type
 suffix = args.suffix
 #%%
 # savedir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot"
-model_run_name = "objrel2_DiT_B_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
-ckpt_name = "epoch_2000_step_80000.pth" # "epoch_4000_step_160000.pth"  
-text_encoder_type = "T5"
-suffix = ""
+# model_run_name = "objrel2_DiT_B_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+# ckpt_name = "epoch_2000_step_80000.pth" # "epoch_4000_step_160000.pth"  
+# text_encoder_type = "T5"
+# suffix = ""
 
-model_run_name = "objrel_rndembdposemb_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
-model_run_name = "objrel_rndembdposemb_DiT_micro_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
-ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
-text_encoder_type = "RandomEmbeddingEncoder_wPosEmb"
-suffix = ""
+# model_run_name = "objrel_rndembdposemb_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+# model_run_name = "objrel_rndembdposemb_DiT_micro_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+# ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
+# text_encoder_type = "RandomEmbeddingEncoder_wPosEmb"
+# suffix = ""
 
-model_run_name = "objrel_rndembdposemb_DiT_micro_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
-ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
-text_encoder_type = "RandomEmbeddingEncoder_wPosEmb"
-suffix = ""
+# model_run_name = "objrel_rndembdposemb_DiT_micro_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+# ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
+# text_encoder_type = "RandomEmbeddingEncoder_wPosEmb"
+# suffix = ""
 
 
-model_run_name = "objrel_T5_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
-ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
-text_encoder_type = "T5"
-suffix = ""
+# model_run_name = "objrel_T5_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+# ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth"  
+# text_encoder_type = "T5"
+# suffix = ""
 
-model_run_name = "objrel_rndembdposemb_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
-ckpt_name = "epoch_1600_step_64000.pth" # "epoch_4000_step_160000.pth" 
-text_encoder_type = "RandomEmbeddingEncoder_wPosEmb" 
-suffix = "_ep1600"
+# model_run_name = "objrel_rndembdposemb_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+# ckpt_name = "epoch_1600_step_64000.pth" # "epoch_4000_step_160000.pth" 
+# text_encoder_type = "RandomEmbeddingEncoder_wPosEmb" 
+# suffix = "_ep1600"
 
-model_run_name = "objrel_T5_DiT_B_pilot"
-ckpt_name = "epoch_4000_step_160000.pth"
-ckpt_name = "epoch_1400_step_56000.pth"
-ckpt_name = "epoch_1800_step_72000.pth"
-ckpt_name = "epoch_2400_step_96000.pth"
-text_encoder_type = "T5"
-suffix = ""
+# model_run_name = "objrel_T5_DiT_B_pilot"
+# ckpt_name = "epoch_4000_step_160000.pth"
+# ckpt_name = "epoch_1400_step_56000.pth"
+# ckpt_name = "epoch_1800_step_72000.pth"
+# ckpt_name = "epoch_2400_step_96000.pth"
+# text_encoder_type = "T5"
+# suffix = ""
 
 #%%
 text_feat_dir_old = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRel_pilot_rndemb/caption_feature_wmask'
@@ -186,10 +190,10 @@ T5_path = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Project
 savedir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/{model_run_name}"
 figdir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}{suffix}/cross_attn_vis_figs"
 os.makedirs(figdir, exist_ok=True)
-
 tokenizer = T5Tokenizer.from_pretrained(T5_path, )#subfolder="tokenizer")
 if text_encoder_type == "T5":
-    text_encoder = T5EncoderModel.from_pretrained(T5_path, load_in_8bit=False, torch_dtype=torch.float16, )
+    T5_dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}[args.T5_dtype]
+    text_encoder = T5EncoderModel.from_pretrained(T5_path, load_in_8bit=False, torch_dtype=T5_dtype, )
 elif text_encoder_type == "RandomEmbeddingEncoder_wPosEmb":
     emb_data = th.load(join(text_feat_dir_old, "word_embedding_dict.pt"))
     text_encoder = RandomEmbeddingEncoder_wPosEmb(emb_data["embedding_dict"], 
@@ -252,8 +256,11 @@ ckpt = torch.load(join(ckptdir, ckpt_name))
 pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict_ema']))
 # pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict']))
 pipeline.tokenizer = tokenizer
-pipeline.text_encoder = text_encoder
-pipeline.to(device="cuda", dtype=weight_dtype);
+# pipeline.text_encoder = text_encoder
+# pipeline.to(device="cuda", dtype=weight_dtype);
+pipeline.text_encoder = text_encoder.to(device="cuda",)
+pipeline.to(device="cuda", dtype=T5_dtype);
+
 
 # add attention map store hooks
 pipeline.transformer = replace_attn_processor(pipeline.transformer)
