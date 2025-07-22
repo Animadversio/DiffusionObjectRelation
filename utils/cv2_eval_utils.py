@@ -129,18 +129,20 @@ def find_classify_object_masks(image, area_threshold=100, radius=16.0):
     return classified_objects_df, object_masks
 
 
-def identity_spatial_relation(x1, y1, x2, y2):
+def identity_spatial_relation(x1, y1, x2, y2, threshold=5):
     """Turn two points into a string of spatial relation
     Args:
         x1, y1: x, y coordinates of the first point
         x2, y2: x, y coordinates of the second point
+        threshold: threshold for the spatial relation
     Returns:
         observed_relation: string of spatial relation
+          one of ['above', 'below', 'left', 'right', 'upper_left', 'upper_right', 'lower_left', 'lower_right']
     """
     dx = x1 - x2  # Positive means shape1 is to the right
     dy = y1 - y2  # Positive means shape1 is lower
     # Define thresholds for "directly" above/below/left/right
-    threshold = 5  # pixels
+    # threshold = 5  # pixels
     if abs(dx) <= threshold:  # Roughly aligned vertically
         if dy < 0:
             observed_relation = 'above'
@@ -163,78 +165,163 @@ def identity_spatial_relation(x1, y1, x2, y2):
     return observed_relation
 
 
-def evaluate_parametric_relation(df, scene_info, MARGIN=25):
-    """ blue_triangle_is_above_red_triangle
-    Evaluates if a blue-dominant triangle is above a red-dominant triangle in the DataFrame.
+# def evaluate_parametric_relation(df, scene_info, MARGIN=25):
+#     """ blue_triangle_is_above_red_triangle
+#     Evaluates if a blue-dominant triangle is above a red-dominant triangle in the DataFrame.
+
+#     Parameters:
+#     df (pd.DataFrame): DataFrame containing object detection details. It must include 
+#                        columns 'Shape', 'Color (RGB)', 'Center (x, y)', and 'Area'.
+#     scene_info: Dictionary containing the scene information
+#     MARGIN: Margin for color thresholding
+
+#     Returns:
+#     bool: True if a blue-dominant triangle is above a red-dominant triangle, False otherwise.
+#     """
+#     # Validate input
+#     if df.empty:
+#         return False, "no object"
+#     if not all(col in df.columns for col in ['Shape', 'Color (RGB)', 'Center (x, y)']):
+#         # return False, "no object"
+#         raise ValueError("DataFrame must contain 'Shape', 'Color (RGB)', and 'Center (x, y)' columns.")
+#     shape1 = scene_info["shape1"] 
+#     shape2 = scene_info["shape2"]
+#     color1 = scene_info["color1"]
+#     color2 = scene_info["color2"]
+#     spatial_relationship = scene_info["spatial_relationship"]
+#     # Extract triangles
+#     df["is_red"] = df['Color (RGB)'].apply(lambda rgb: rgb[0] > 255-MARGIN and rgb[1] < MARGIN and rgb[2] < MARGIN)
+#     df["is_blue"] = df['Color (RGB)'].apply(lambda rgb: rgb[2] > 255-MARGIN and rgb[0] < MARGIN and rgb[1] < MARGIN)
+#     # Identify red-dominant and blue-dominant triangles
+#     mask1 = np.ones(len(df), dtype=bool)
+#     if shape1 is not None:
+#         mask1 = mask1 & (df['Shape'] == shape1)
+#     if color1 is not None:
+#         if color1 == "red":
+#             mask1 = mask1 & (df['is_red'] == True)
+#         elif color1 == "blue":
+#             mask1 = mask1 & (df['is_blue'] == True)
+#     obj1_df = df[mask1]
+#     if obj1_df.empty:
+#         return False, "missing object 1"
+    
+#     mask2 = np.ones(len(df), dtype=bool)
+#     if shape2 is not None:
+#         mask2 = mask2 & (df['Shape'] == shape2)
+#     if color2 is not None:
+#         if color2 == "red":
+#             mask2 = mask2 & (df['is_red'] == True)
+#         elif color2 == "blue":
+#             mask2 = mask2 & (df['is_blue'] == True)
+#     obj2_df = df[mask2]
+#     if obj2_df.empty:
+#         return False, "missing object 2"
+
+#     # Compare the y-coordinates (assuming y increases downwards)
+#     if len(obj1_df) == 1 and len(obj2_df) == 1:
+#         x1, y1 = obj1_df['Center (x, y)'].iloc[0]
+#         x2, y2 = obj2_df['Center (x, y)'].iloc[0]
+#         observed_relation = identity_spatial_relation(x1, y1, x2, y2)
+#         rel_correct = spatial_relationship == observed_relation
+#     elif len(obj1_df) == len(obj2_df) == 2 and obj1_df.equals(obj2_df):
+#         # two objects are the same and the two objects can be in any order
+#         x1, y1 = obj1_df['Center (x, y)'].iloc[0]
+#         x2, y2 = obj1_df['Center (x, y)'].iloc[1]
+#         observed_relation1 = identity_spatial_relation(x1, y1, x2, y2)
+#         observed_relation2 = identity_spatial_relation(x2, y2, x1, y1)
+#         rel_correct = spatial_relationship in [observed_relation1, observed_relation2]
+#     else:
+#         return False, "number of objects incorrect"
+#     if rel_correct:
+#         return True, "correct"
+#     else:
+#         return False, "spatial relation incorrect" # and abs(blue_x - red_x) < 10
+
+
+def evaluate_parametric_relation(df, scene_info, color_margin=25, spatial_threshold=5):
+    """
+    Evaluates parametric relationships between objects in a DataFrame.
 
     Parameters:
     df (pd.DataFrame): DataFrame containing object detection details. It must include 
                        columns 'Shape', 'Color (RGB)', 'Center (x, y)', and 'Area'.
-    scene_info: Dictionary containing the scene information
-    MARGIN: Margin for color thresholding
+    scene_info (dict): Dictionary specifying the relationship details (shape, color, and spatial relationship).
+    MARGIN (int): Tolerance for identifying dominant colors.
 
     Returns:
-    bool: True if a blue-dominant triangle is above a red-dominant triangle, False otherwise.
+    dict: Dictionary with keys for overall correctness, shape match, color match, and spatial relationship match.
     """
     # Validate input
     if df.empty:
-        return False, "no object"
+        return {"overall": False, "shape": False, "color": False, "spatial_relationship": False, "reason": "no object",
+                "Dx": np.nan, "Dy": np.nan, "x1": np.nan, "y1": np.nan, "x2": np.nan, "y2": np.nan}
     if not all(col in df.columns for col in ['Shape', 'Color (RGB)', 'Center (x, y)']):
-        # return False, "no object"
         raise ValueError("DataFrame must contain 'Shape', 'Color (RGB)', and 'Center (x, y)' columns.")
-    shape1 = scene_info["shape1"] 
+
+    shape1 = scene_info["shape1"]
     shape2 = scene_info["shape2"]
     color1 = scene_info["color1"]
     color2 = scene_info["color2"]
     spatial_relationship = scene_info["spatial_relationship"]
-    # Extract triangles
-    df["is_red"] = df['Color (RGB)'].apply(lambda rgb: rgb[0] > 255-MARGIN and rgb[1] < MARGIN and rgb[2] < MARGIN)
-    df["is_blue"] = df['Color (RGB)'].apply(lambda rgb: rgb[2] > 255-MARGIN and rgb[0] < MARGIN and rgb[1] < MARGIN)
-    # Identify red-dominant and blue-dominant triangles
-    mask1 = np.ones(len(df), dtype=bool)
-    if shape1 is not None:
-        mask1 = mask1 & (df['Shape'] == shape1)
-    if color1 is not None:
-        if color1 == "red":
-            mask1 = mask1 & (df['is_red'] == True)
-        elif color1 == "blue":
-            mask1 = mask1 & (df['is_blue'] == True)
-    obj1_df = df[mask1]
-    if obj1_df.empty:
-        return False, "missing object 1"
+
+    # Add color classifications to the DataFrame
+    df["is_red"] = df['Color (RGB)'].apply(lambda rgb: rgb[0] > 255 - color_margin and rgb[1] < color_margin and rgb[2] < color_margin)
+    df["is_blue"] = df['Color (RGB)'].apply(lambda rgb: rgb[2] > 255 - color_margin and rgb[0] < color_margin and rgb[1] < color_margin)
+
+    # Check for object existence
+    obj1 = df[
+        ((df["Shape"].str.lower() == shape1.lower()) if shape1 else True) &
+        ((df["is_red"] if color1 == "red" else True) if color1 else True) &
+        ((df["is_blue"] if color1 == "blue" else True) if color1 else True)
+    ]
+    obj2 = df[
+        ((df["Shape"].str.lower() == shape2.lower()) if shape2 else True) &
+        ((df["is_red"] if color2 == "red" else True) if color2 else True) &
+        ((df["is_blue"] if color2 == "blue" else True) if color2 else True)
+    ]
+
+    # Evaluate individual correctness
+    shape_correct = (
+        (shape1 is None or any(df["Shape"].str.lower() == shape1.lower())) and
+        (shape2 is None or any(df["Shape"].str.lower() == shape2.lower()))
+    )
+    color_correct = (
+        (color1 is None or (color1 == "red" and any(df["is_red"])) or (color1 == "blue" and any(df["is_blue"]))) and
+        (color2 is None or (color2 == "red" and any(df["is_red"])) or (color2 == "blue" and any(df["is_blue"])))
+    )
+
+    # Spatial relationship correctness
+    if len(obj1) == 1 and len(obj2) == 1:
+        x1, y1 = obj1["Center (x, y)"].iloc[0]
+        x2, y2 = obj2["Center (x, y)"].iloc[0]
+        observed_relation = identity_spatial_relation(x1, y1, x2, y2, threshold=spatial_threshold)
+        #TODO: fix this, maybe too stringent! is upper right also count as right?
+        spatial_correct = spatial_relationship == observed_relation
+        Dx = x1 - x2
+        Dy = y1 - y2
+    else:
+        spatial_correct = False
+        Dx = np.nan
+        Dy = np.nan
+        x1, y1 = np.nan, np.nan
+        x2, y2 = np.nan, np.nan
+
+    # Overall correctness
+    overall_correct = shape_correct and color_correct and spatial_correct
+
+    return {
+        "overall": overall_correct,
+        "shape": shape_correct,
+        "color": color_correct,
+        "spatial_relationship": spatial_correct,
+        "Dx": Dx,
+        "Dy": Dy,
+        "x1": x1,
+        "y1": y1,
+        "x2": x2,
+        "y2": y2,
+    }
     
-    mask2 = np.ones(len(df), dtype=bool)
-    if shape2 is not None:
-        mask2 = mask2 & (df['Shape'] == shape2)
-    if color2 is not None:
-        if color2 == "red":
-            mask2 = mask2 & (df['is_red'] == True)
-        elif color2 == "blue":
-            mask2 = mask2 & (df['is_blue'] == True)
-    obj2_df = df[mask2]
-    if obj2_df.empty:
-        return False, "missing object 2"
-
-    # Compare the y-coordinates (assuming y increases downwards)
-    if len(obj1_df) == 1 and len(obj2_df) == 1:
-        x1, y1 = obj1_df['Center (x, y)'].iloc[0]
-        x2, y2 = obj2_df['Center (x, y)'].iloc[0]
-        observed_relation = identity_spatial_relation(x1, y1, x2, y2)
-        rel_correct = spatial_relationship == observed_relation
-    elif len(obj1_df) == len(obj2_df) == 2 and obj1_df.equals(obj2_df):
-        # two objects are the same and the two objects can be in any order
-        x1, y1 = obj1_df['Center (x, y)'].iloc[0]
-        x2, y2 = obj1_df['Center (x, y)'].iloc[1]
-        observed_relation1 = identity_spatial_relation(x1, y1, x2, y2)
-        observed_relation2 = identity_spatial_relation(x2, y2, x1, y1)
-        rel_correct = spatial_relationship in [observed_relation1, observed_relation2]
-    else:
-        return False, "number of objects incorrect"
-    if rel_correct:
-        return True, "correct"
-    else:
-        return False, "spatial relation incorrect" # and abs(blue_x - red_x) < 10
-
 
 def eval_func_factory(prompt_name):
     return lambda df: evaluate_parametric_relation(df, scene_info_collection[prompt_name])
