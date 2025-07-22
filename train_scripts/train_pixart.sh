@@ -97,12 +97,57 @@ torchrun --nproc_per_node=1 \
     --loss_report_name "train_loss"
 
 
-# train conditional diffusion on dataset of single object images. POC: Hannah
+# train conditional diffusion on dataset of single object images "a {color}{shape}". POC: Hannah
+# Status: Done. 
 cd ~/Github/DiffusionObjectRelation
 torchrun --nproc_per_node=1 \
     PixArt-alpha/train_scripts/train_with_visualize.py \
     /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_single_T5_prompt20_training_from_scratch.py  \
-    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_DiT_B_pilot/" \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_DiT_B_pilot2/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+
+# Using the single object dataset trained just on labels "{shape}." POC: Hannah. 
+# Status: Done. 
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_single_simple_T5_prompt20_training_from_scratch.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_DiT_B_pilot3/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+# Using the single object dataset trained on randomized captions.  POC: Hannah. 
+# Status: Done. but bad. don't run this again! Dataset was bad. 
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_single_randomized_T5_prompt20_training_from_scratch.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_DiT_B_pilot4/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+# Using the single object dataset trained on randomized captions RUN 2. POC: Hannah. 
+# Status: Done. 
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_single_randomized_T5_prompt20_training_from_scratch.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_DiT_mini_randomized_pilot1/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+# Train conditional diffusion on dataset of mixed compositions. POC: Hannah
+# TODO
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_multi_T5_prompt20_training_from_scratch.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_multiobj_T5_DiT_B_pilot1/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
 
 # train conditional diffusion with random embedding, with positional embedding 
 cd ~/Github/DiffusionObjectRelation

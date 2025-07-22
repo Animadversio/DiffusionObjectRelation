@@ -1,9 +1,9 @@
 _base_ = ['/n/home12/hjkim/Github/DiffusionObjectRelation/PixArt-alpha/configs/PixArt_xl2_internal.py']
-data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt'
+data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets'
 
 image_list_json = ['data_info.json',]
 
-data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelSingle_pilot2', 
+data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRelSingle_randomized_pilot1', 
             image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
@@ -11,7 +11,7 @@ image_size = 128
 window_block_indexes = []
 window_size=0
 use_rel_pos=False
-model = 'PixArt_B_2' #The base model 
+model = 'PixArt_mini_2' #The base model 
 model_max_length = 20
 caption_channels = 4096
 fp32_attention = True
@@ -45,24 +45,35 @@ log_interval = 20
 # work_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_pilot_rndemb/output/debug'
 do_visualize_samples = True
 
-prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_t5emb"
+prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_t5emb_randomized"
 
 validation_prompts = [
     "triangle",
-    "blue triangle",
-    "red square",
     "square",
-    "cirle",
+    "circle",
+    "red",
+    "blue",
+    "red square",
     "blue circle",
-    "triangle is to the upper left of square", 
-    "triangle is to the left of square", 
-    "triangle is to the left of triangle", 
-    "circle is below red square",
-    "red circle is to the left of blue square",
-    "blue square is to the right of red circle",
-    "red circle is above square",
-    "triangle is above red circle",
-]
+    "blue triangle",
+    "a red square",
+    "a blue circle",
+    "a blue triangle",
+    "the blue square",
+    "the red circle",
+    "the triangle",
+    "the square",
+    "the circle",
+    "the",
+    "or",
+    "an",
+    "red",
+    "blue",
+    "the red square above the blue circle",
+    "blue triangle to the left of red square",
+    "red circle below blue triangle",
+    "red circle to the right of blue triangle",
+    ]
 
 
 
