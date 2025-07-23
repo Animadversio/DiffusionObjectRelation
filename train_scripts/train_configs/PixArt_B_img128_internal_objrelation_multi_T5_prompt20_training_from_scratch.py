@@ -3,7 +3,7 @@ data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Proje
 
 image_list_json = ['data_info.json',]
 
-data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelSingle_pilot2', 
+data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelMulti_pilot1', 
             image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
@@ -11,7 +11,7 @@ image_size = 128
 window_block_indexes = []
 window_size=0
 use_rel_pos=False
-model = 'PixArt_B_2' #The base model 
+model = 'PixArt_mini_2' #The base model 
 model_max_length = 20
 caption_channels = 4096
 fp32_attention = True
@@ -22,6 +22,7 @@ resume_from = dict(checkpoint=None, load_ema=False, resume_optimizer=True, resum
 # load_from = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/PixArt-XL-2-512x512.pth"
 vae_pretrained = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/sd-vae-ft-ema"
 lewei_scale = 1.0
+
 # training setting
 use_fsdp=False   # if use FSDP mode
 num_workers=10
@@ -42,17 +43,16 @@ save_model_epochs = 50
 save_model_steps = 2000
 eval_sampling_steps = 250
 log_interval = 20
-# work_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_pilot_rndemb/output/debug'
 do_visualize_samples = True
 
-prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_t5emb"
+prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_t5emb_multi"
 
 validation_prompts = [
     "triangle",
     "blue triangle",
     "red square",
     "square",
-    "cirle",
+    "circle",
     "blue circle",
     "triangle is to the upper left of square", 
     "triangle is to the left of square", 

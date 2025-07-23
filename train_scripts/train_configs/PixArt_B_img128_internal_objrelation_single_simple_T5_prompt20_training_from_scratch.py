@@ -3,7 +3,7 @@ data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Proje
 
 image_list_json = ['data_info.json',]
 
-data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelSingle_pilot2', 
+data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelSingle_pilot3', 
             image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
@@ -45,14 +45,14 @@ log_interval = 20
 # work_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_pilot_rndemb/output/debug'
 do_visualize_samples = True
 
-prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_t5emb"
+prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_t5emb_3"
 
 validation_prompts = [
     "triangle",
     "blue triangle",
     "red square",
     "square",
-    "cirle",
+    "circle",
     "blue circle",
     "triangle is to the upper left of square", 
     "triangle is to the left of square", 
