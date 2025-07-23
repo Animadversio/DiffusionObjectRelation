@@ -341,9 +341,13 @@ for ckpt_path in ckpt_all:
                     "prompt": prompt,
                     "prompt_id": prompt_id,
                     "overall": eval_result["overall"],
+                    "overall_loose": eval_result["overall_loose"],
                     "shape": eval_result["shape"],
                     "color": eval_result["color"],
+                    "exist_binding": eval_result["exist_binding"],
+                    "unique_binding": eval_result["unique_binding"],
                     "spatial_relationship": eval_result["spatial_relationship"],
+                    "spatial_relationship_loose": eval_result["spatial_relationship_loose"],
                     "Dx": eval_result["Dx"],
                     "Dy": eval_result["Dy"],
                     "x1": eval_result["x1"],
@@ -359,7 +363,10 @@ for ckpt_path in ckpt_all:
             acc_overall = eval_df["overall"].mean()
             acc_shape = eval_df["shape"].mean()
             acc_color = eval_df["color"].mean()
+            acc_exist_binding = eval_df["exist_binding"].mean()
+            acc_unique_binding = eval_df["unique_binding"].mean()
             acc_spatial_relationship = eval_df["spatial_relationship"].mean()
+            acc_spatial_relationship_loose = eval_df["spatial_relationship_loose"].mean()
             Dx_mean = eval_df["Dx"].mean(skipna=True)
             Dy_mean = eval_df["Dy"].mean(skipna=True)
             Dx_std = eval_df["Dx"].std(skipna=True)
@@ -367,7 +374,7 @@ for ckpt_path in ckpt_all:
             N_valid = eval_df["Dx"].count()
             N_total = len(eval_df)
             print(f"prompt: {prompt} (id: {prompt_id}) {scene_info}")
-            print(f"accuracy color {acc_color:.2f}, shape {acc_shape:.2f}, spatial_relationship {acc_spatial_relationship:.2f}, overall {acc_overall:.2f}")
+            print(f"accuracy color {acc_color:.2f}, shape {acc_shape:.2f}, exist_binding {acc_exist_binding:.2f}, unique_binding {acc_unique_binding:.2f}, spatial_relationship {acc_spatial_relationship:.2f}, spatial_relationship_loose {acc_spatial_relationship_loose:.2f}, overall {acc_overall:.2f}")
             print(f"Dx {Dx_mean:.2f} ± {Dx_std:.2f}, Dy {Dy_mean:.2f} ± {Dy_std:.2f} (valid N={N_valid}/{N_total})")
             eval_df_all.append(eval_df)
             object_df_all.append(object_df)
