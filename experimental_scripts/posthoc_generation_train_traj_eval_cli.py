@@ -1,10 +1,13 @@
 # %%
 try:
     from IPython import get_ipython
-    if get_ipython() is not None:
-        %load_ext autoreload
-        %autoreload 2
+    ip = get_ipython()
+    if ip is not None:
+        # programmatically invoke the same things as %load_ext autoreload
+        ip.run_line_magic("load_ext", "autoreload")
+        ip.run_line_magic("autoreload", "2")
 except ImportError:
+    # not in IPython at all
     pass
 
 # %%
@@ -173,6 +176,55 @@ suffix = ""
 model_run_name = "objrel_rndemb_DiT_B_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
 text_encoder_type = "RandomEmbeddingEncoder" 
 suffix = ""
+# for model_run_name, text_encoder_type in [
+#     ("objrel_T5_DiT_B_pilot", "T5"),
+#     ("objrel_T5_DiT_mini_pilot", "T5"),
+#     ("objrel_rndembdposemb_DiT_B_pilot", "RandomEmbeddingEncoder_wPosEmb"),
+#     ("objrel_rndembdposemb_DiT_micro_pilot", "RandomEmbeddingEncoder_wPosEmb"),
+#     ("objrel_rndembdposemb_DiT_nano_pilot", "RandomEmbeddingEncoder_wPosEmb"),
+#     ("objrel_rndembdposemb_DiT_mini_pilot", "RandomEmbeddingEncoder_wPosEmb"),
+#     # ("objrel_rndemb_DiT_B_pilot", "RandomEmbeddingEncoder"),
+#     ("objrel_T5_DiT_B_pilot_WDecay", "T5"),
+#     ("objrel_T5_DiT_mini_pilot_WDecay", "T5"),
+# ]:
+import argparse
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Post-hoc generation training trajectory evaluation')
+parser.add_argument('--model_run_name', type=str, required=True,
+                    choices=[
+                        "objrel_T5_DiT_B_pilot",
+                        "objrel_T5_DiT_mini_pilot", 
+                        "objrel_rndembdposemb_DiT_B_pilot",
+                        "objrel_rndembdposemb_DiT_micro_pilot",
+                        "objrel_rndembdposemb_DiT_nano_pilot",
+                        "objrel_rndembdposemb_DiT_mini_pilot",
+                        "objrel_rndemb_DiT_B_pilot",
+                        "objrel_T5_DiT_B_pilot_WDecay",
+                        "objrel_T5_DiT_mini_pilot_WDecay"
+                    ],
+                    help='Model run name to evaluate')
+parser.add_argument('--text_encoder_type', type=str, 
+                    choices=["T5", "RandomEmbeddingEncoder_wPosEmb", "RandomEmbeddingEncoder"],
+                    help='Text encoder type (will be auto-determined if not specified)')
+
+args = parser.parse_args()
+
+# Map model names to text encoder types
+model_to_encoder = {
+    "objrel_T5_DiT_B_pilot": "T5",
+    "objrel_T5_DiT_mini_pilot": "T5", 
+    "objrel_rndembdposemb_DiT_B_pilot": "RandomEmbeddingEncoder_wPosEmb",
+    "objrel_rndembdposemb_DiT_micro_pilot": "RandomEmbeddingEncoder_wPosEmb",
+    "objrel_rndembdposemb_DiT_nano_pilot": "RandomEmbeddingEncoder_wPosEmb",
+    "objrel_rndembdposemb_DiT_mini_pilot": "RandomEmbeddingEncoder_wPosEmb",
+    "objrel_rndemb_DiT_B_pilot": "RandomEmbeddingEncoder",
+    "objrel_T5_DiT_B_pilot_WDecay": "T5",
+    "objrel_T5_DiT_mini_pilot_WDecay": "T5",
+}
+
+model_run_name = args.model_run_name
+text_encoder_type = args.text_encoder_type if args.text_encoder_type else model_to_encoder[model_run_name]
 # %% [markdown]
 # ### DiT network at float16, T5 at bfloat16
 # %%
@@ -205,8 +257,6 @@ result_dir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Pro
 eval_dir = join(savedir, "large_scale_eval_posthoc")
 os.makedirs(eval_dir, exist_ok=True)
 #%%
-
-
 config = read_config(join(savedir, 'config.py'))
 weight_dtype = torch.float32
 if config.mixed_precision == "fp16": # accelerator.
@@ -273,7 +323,7 @@ pipeline.text_encoder = text_encoder.to(device="cuda", )
 # %%
 # test one prompt works. 
 out = pipeline("blue square below and to the right of red circle", num_inference_steps=14, guidance_scale=4.5, max_sequence_length=20, 
-         num_images_per_prompt=4, generator=th.Generator(device="cuda").manual_seed(42), prompt_dtype=torch.float16)
+        num_images_per_prompt=4, generator=th.Generator(device="cuda").manual_seed(42), prompt_dtype=torch.float16)
 
 # %% [markdown]
 # ### Mass produce 
@@ -300,13 +350,13 @@ object_df_all_traj = []
 # step_num = 160000
 ckptdir = join(savedir, "checkpoints")
 ckpt_all = sorted(glob.glob(join(ckptdir, "*.pth")), 
-                  key=lambda x: int(os.path.basename(x).split('_step_')[-1].split('.pth')[0]))
+                key=lambda x: int(os.path.basename(x).split('_step_')[-1].split('.pth')[0]))
 for ckpt_path in ckpt_all:
     ckpt_name = os.path.basename(ckpt_path)
     # Extract step number from filename (assuming format like "epoch_X_step_Y.pth")
     step_num = int(ckpt_name.split('_step_')[-1].split('.pth')[0])
     for ckpt_ver in ["ema", "model"]:
-        print(f"loading ckpt step {step_num} {ckpt_ver} |  {ckpt_path} ...")
+        print(f"loading ckpt step {model_run_name} {step_num} {ckpt_ver} |  {ckpt_path} ...")
         ckpt = torch.load(ckpt_path)
         if ckpt_ver == "ema":
             pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict_ema']))
@@ -392,219 +442,252 @@ eval_df_all_traj = pd.concat(eval_df_all_traj)
 object_df_all_traj = pd.concat(object_df_all_traj)
 eval_df_all_traj.to_csv(join(eval_dir, f"eval_df_all_train_traj_prompts.csv"), index=False)
 object_df_all_traj.to_pickle(join(eval_dir, f"object_df_all_train_traj_prompts.pkl"))
+torch.cuda.empty_cache()
+
+#%%
+synopsis_dir = f"/n/home12/binxuwang/Github/DiffusionObjectRelation/Figures/model_eval_synopsis"
+eval_df_all_traj_syn = eval_df_all_traj.groupby(["step_num", "ckpt_ver"]).mean(numeric_only=True).reset_index()
+# 1) melt into long form
+df_long = eval_df_all_traj_syn.reset_index().melt(
+    id_vars=["step_num", "ckpt_ver"],
+    value_vars=["color", "shape", "exist_binding", "unique_binding", "spatial_relationship", "spatial_relationship_loose"],
+    var_name="metric",
+    value_name="value",
+)
+# 2) make the combined label column
+df_long["legend_label"] = df_long["metric"] + " " + df_long["ckpt_ver"]
+# 3) plot, using legend_label for hue and metric for style (if you still want different markers/linestyles)
+plt.figure(figsize=(5, 4))
+sns.lineplot(
+    data=df_long,
+    x="step_num",
+    y="value",
+    hue="metric",
+    style="ckpt_ver",
+    markers=False,    # or dashes=True
+)
+plt.xlabel("Step Number")
+plt.ylabel("Accuracy")
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title="")
+plt.suptitle(f"Evaluation Trajectory\n{model_run_name}")
+# saveallforms(eval_dir, "eval_train_dynamics_traj_syn")
+saveallforms(synopsis_dir, f"{model_run_name}_eval_train_dynamics_traj_syn")
+plt.show()
+
+
 
 # %% [markdown]
 # ### Synopsis 
-# %%
-eval_syn_df = eval_df_all.groupby("prompt_id").mean(numeric_only=True)
-eval_syn_df = eval_syn_df.rename(columns={'overall': 'overall_acc', 'shape': 'shape_acc', 'color': 'color_acc', 'spatial_relationship': 'spatial_relationship_acc'})
-prompt_eval_syn_df = prompt_df.merge(eval_syn_df, left_index=True, right_index=True)
-prompt_eval_syn_df.to_pickle(join(eval_dir, f"prompt_eval_syn_df.pkl"))
+# # %%
+# eval_syn_df = eval_df_all.groupby("prompt_id").mean(numeric_only=True)
+# eval_syn_df = eval_syn_df.rename(columns={'overall': 'overall_acc', 'shape': 'shape_acc', 'color': 'color_acc', 'spatial_relationship': 'spatial_relationship_acc'})
+# prompt_eval_syn_df = prompt_df.merge(eval_syn_df, left_index=True, right_index=True)
+# prompt_eval_syn_df.to_pickle(join(eval_dir, f"prompt_eval_syn_df.pkl"))
 
-print(prompt_eval_syn_df.head())
-print("starting heatmap")
-# %%
-# Create heatmap
-# Pivot the data to create a heatmap with spatial relationships as columns
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='spatial_relationship_acc',
-    aggfunc='mean'
-)
+# print(prompt_eval_syn_df.head())
+# print("starting heatmap")
+# # %%
+# # Create heatmap
+# # Pivot the data to create a heatmap with spatial relationships as columns
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='spatial_relationship_acc',
+#     aggfunc='mean'
+# )
 
-plt.figure(figsize=(8, 6))
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Spatial Relationship Accuracy'})
-plt.title(f'Spatial Relationship Accuracy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
-plt.xlabel('Prompt Spatial Relationship')
-plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
-plt.tight_layout()
-saveallforms(eval_dir, f"relation_eval_heatmap_spatial_relationship_acc_{model_run_name}")
-plt.show()
-
-
-# %%
-# Pivot the data to create a heatmap with spatial relationships as columns
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='shape_acc',
-    aggfunc='mean'
-)
-plt.figure(figsize=(8, 6))
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Shape Accuracy'})
-plt.title(f'Shape Accuracy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
-plt.xlabel('Prompt Spatial Relationship')
-plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
-plt.tight_layout()
-saveallforms(eval_dir, f"relation_eval_heatmap_shape_acc_{model_run_name}")
-plt.show()
-
-# %%
-
-# Pivot the data to create a heatmap with spatial relationships as columns
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='color_acc',
-    aggfunc='mean'
-)
-plt.figure(figsize=(8, 6))
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Color Accuracy'})
-plt.title(f'Color Accuracy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
-plt.xlabel('Prompt Spatial Relationship')
-plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
-plt.tight_layout()
-saveallforms(eval_dir, f"relation_eval_heatmap_color_acc_{model_run_name}")
-plt.show()
-
-# %%
-
-# Pivot the data to create a heatmap with spatial relationships as columns
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='Dx',
-    aggfunc='mean'
-)
-plt.figure(figsize=(8, 6))
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dx'})
-plt.title(f'Dx by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
-plt.xlabel('Prompt Spatial Relationship')
-plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
-plt.tight_layout()
-saveallforms(eval_dir, f"relation_eval_heatmap_Dx_{model_run_name}")
-plt.show()
-
-# %%
-
-# Pivot the data to create a heatmap with spatial relationships as columns
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='Dy',
-    aggfunc='mean'
-)
-plt.figure(figsize=(8, 6))
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dy'})
-plt.title(f'Dy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
-plt.xlabel('Prompt Spatial Relationship')
-plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
-plt.tight_layout()
-saveallforms(eval_dir, f"relation_eval_heatmap_Dy_{model_run_name}")
-plt.show()
-
-# %%
-# Create a combined figure with multiple subplots
-fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-
-# Plot 1: Accuracy by Prompt Spatial Relationship
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='overall_acc',
-    aggfunc='mean'
-)
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Accuracy'}, ax=axes[0, 0])
-axes[0, 0].set_title(f'Overall Accuracy')
-axes[0, 0].set_xlabel('Prompt Spatial Relationship')
-axes[0, 0].set_ylabel('Object Attributes')
-axes[0, 0].tick_params(axis='x', rotation=45)
-axes[0, 0].set_xticklabels(axes[0, 0].get_xticklabels(), ha='right')
-
-# Plot 2: Color Accuracy by Prompt Spatial Relationship
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='color_acc',
-    aggfunc='mean'
-)
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Color Accuracy'}, ax=axes[0, 1])
-axes[0, 1].set_title(f'Color Accuracy')
-axes[0, 1].set_xlabel('Prompt Spatial Relationship')
-axes[0, 1].set_ylabel('Object Attributes')
-axes[0, 1].tick_params(axis='x', rotation=45)
-axes[0, 1].set_xticklabels(axes[0, 1].get_xticklabels(), ha='right')
-# Get rid of the y ticks
-axes[0, 1].set_yticks([])
-
-# Plot 3: Shape Accuracy by Prompt Spatial Relationship
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='shape_acc',
-    aggfunc='mean'
-)
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Shape Accuracy'}, ax=axes[0, 2])
-axes[0, 2].set_title(f'Shape Accuracy')
-axes[0, 2].set_xlabel('Prompt Spatial Relationship')
-axes[0, 2].set_ylabel('Object Attributes')
-axes[0, 2].tick_params(axis='x', rotation=45)
-axes[0, 2].set_xticklabels(axes[0, 2].get_xticklabels(), ha='right')
-# Get rid of the y ticks
-axes[0, 2].set_yticks([])
-
-# Plot 4: Spatial Relationship Accuracy
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='spatial_relationship_acc',
-    aggfunc='mean'
-)
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Spatial Accuracy'}, ax=axes[1, 0])
-axes[1, 0].set_title(f'Spatial Relationship Accuracy')
-axes[1, 0].set_xlabel('Prompt Spatial Relationship')
-axes[1, 0].set_ylabel('Object Attributes')
-axes[1, 0].tick_params(axis='x', rotation=45)
-axes[1, 0].set_xticklabels(axes[1, 0].get_xticklabels(), ha='right')
-
-# Plot 5: Dx by Object Attributes
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='Dx',
-    aggfunc='mean'
-)
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dx'}, ax=axes[1, 1])
-axes[1, 1].set_title(f'Dx')
-axes[1, 1].set_xlabel('Prompt Spatial Relationship')
-axes[1, 1].set_ylabel('Object Attributes')
-axes[1, 1].tick_params(axis='x', rotation=45)
-axes[1, 1].set_xticklabels(axes[1, 1].get_xticklabels(), ha='right')
-# Get rid of the y ticks
-axes[1, 1].set_yticks([])
+# plt.figure(figsize=(8, 6))
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Spatial Relationship Accuracy'})
+# plt.title(f'Spatial Relationship Accuracy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
+# plt.xlabel('Prompt Spatial Relationship')
+# plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
+# plt.xticks(rotation=45)
+# plt.yticks(rotation=0)
+# plt.tight_layout()
+# saveallforms(eval_dir, f"relation_eval_heatmap_spatial_relationship_acc_{model_run_name}")
+# plt.show()
 
 
-# Plot 6: Dy by Object Attributes
-pivot_df = prompt_eval_syn_df.pivot_table(
-    index=['color1', 'shape1', 'color2', 'shape2'], 
-    columns='relation_str', 
-    values='Dy',
-    aggfunc='mean'
-)
-sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dy'}, ax=axes[1, 2])
-axes[1, 2].set_title(f'Dy')
-axes[1, 2].set_xlabel('Prompt Spatial Relationship')
-axes[1, 2].set_ylabel('Object Attributes')
-axes[1, 2].tick_params(axis='x', rotation=45)
-axes[1, 2].set_xticklabels(axes[1, 2].get_xticklabels(), ha='right')
-# Get rid of the y ticks
-axes[1, 2].set_yticks([])
+# # %%
+# # Pivot the data to create a heatmap with spatial relationships as columns
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='shape_acc',
+#     aggfunc='mean'
+# )
+# plt.figure(figsize=(8, 6))
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Shape Accuracy'})
+# plt.title(f'Shape Accuracy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
+# plt.xlabel('Prompt Spatial Relationship')
+# plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
+# plt.xticks(rotation=45)
+# plt.yticks(rotation=0)
+# plt.tight_layout()
+# saveallforms(eval_dir, f"relation_eval_heatmap_shape_acc_{model_run_name}")
+# plt.show()
 
-plt.suptitle(f'Combined Evaluation Results (mean of 100 samples per prompt)\n{model_run_name}', fontsize=16, y=0.98)
-plt.tight_layout()
-saveallforms(eval_dir, f"relation_eval_heatmap_all_synopsis_{model_run_name}")
-plt.show()
+# # %%
+
+# # Pivot the data to create a heatmap with spatial relationships as columns
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='color_acc',
+#     aggfunc='mean'
+# )
+# plt.figure(figsize=(8, 6))
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Color Accuracy'})
+# plt.title(f'Color Accuracy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
+# plt.xlabel('Prompt Spatial Relationship')
+# plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
+# plt.xticks(rotation=45)
+# plt.yticks(rotation=0)
+# plt.tight_layout()
+# saveallforms(eval_dir, f"relation_eval_heatmap_color_acc_{model_run_name}")
+# plt.show()
+
+# # %%
+
+# # Pivot the data to create a heatmap with spatial relationships as columns
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='Dx',
+#     aggfunc='mean'
+# )
+# plt.figure(figsize=(8, 6))
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dx'})
+# plt.title(f'Dx by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
+# plt.xlabel('Prompt Spatial Relationship')
+# plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
+# plt.xticks(rotation=45)
+# plt.yticks(rotation=0)
+# plt.tight_layout()
+# saveallforms(eval_dir, f"relation_eval_heatmap_Dx_{model_run_name}")
+# plt.show()
+
+# # %%
+
+# # Pivot the data to create a heatmap with spatial relationships as columns
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='Dy',
+#     aggfunc='mean'
+# )
+# plt.figure(figsize=(8, 6))
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dy'})
+# plt.title(f'Dy by Object Attributes (mean of 100 samples per prompt)\n{model_run_name}')
+# plt.xlabel('Prompt Spatial Relationship')
+# plt.ylabel('Object Attributes (color1, shape1, color2, shape2)')
+# plt.xticks(rotation=45)
+# plt.yticks(rotation=0)
+# plt.tight_layout()
+# saveallforms(eval_dir, f"relation_eval_heatmap_Dy_{model_run_name}")
+# plt.show()
+
+# # %%
+# # Create a combined figure with multiple subplots
+# fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+
+# # Plot 1: Accuracy by Prompt Spatial Relationship
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='overall_acc',
+#     aggfunc='mean'
+# )
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Accuracy'}, ax=axes[0, 0])
+# axes[0, 0].set_title(f'Overall Accuracy')
+# axes[0, 0].set_xlabel('Prompt Spatial Relationship')
+# axes[0, 0].set_ylabel('Object Attributes')
+# axes[0, 0].tick_params(axis='x', rotation=45)
+# axes[0, 0].set_xticklabels(axes[0, 0].get_xticklabels(), ha='right')
+
+# # Plot 2: Color Accuracy by Prompt Spatial Relationship
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='color_acc',
+#     aggfunc='mean'
+# )
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Color Accuracy'}, ax=axes[0, 1])
+# axes[0, 1].set_title(f'Color Accuracy')
+# axes[0, 1].set_xlabel('Prompt Spatial Relationship')
+# axes[0, 1].set_ylabel('Object Attributes')
+# axes[0, 1].tick_params(axis='x', rotation=45)
+# axes[0, 1].set_xticklabels(axes[0, 1].get_xticklabels(), ha='right')
+# # Get rid of the y ticks
+# axes[0, 1].set_yticks([])
+
+# # Plot 3: Shape Accuracy by Prompt Spatial Relationship
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='shape_acc',
+#     aggfunc='mean'
+# )
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Shape Accuracy'}, ax=axes[0, 2])
+# axes[0, 2].set_title(f'Shape Accuracy')
+# axes[0, 2].set_xlabel('Prompt Spatial Relationship')
+# axes[0, 2].set_ylabel('Object Attributes')
+# axes[0, 2].tick_params(axis='x', rotation=45)
+# axes[0, 2].set_xticklabels(axes[0, 2].get_xticklabels(), ha='right')
+# # Get rid of the y ticks
+# axes[0, 2].set_yticks([])
+
+# # Plot 4: Spatial Relationship Accuracy
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='spatial_relationship_acc',
+#     aggfunc='mean'
+# )
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.2f', cbar_kws={'label': 'Spatial Accuracy'}, ax=axes[1, 0])
+# axes[1, 0].set_title(f'Spatial Relationship Accuracy')
+# axes[1, 0].set_xlabel('Prompt Spatial Relationship')
+# axes[1, 0].set_ylabel('Object Attributes')
+# axes[1, 0].tick_params(axis='x', rotation=45)
+# axes[1, 0].set_xticklabels(axes[1, 0].get_xticklabels(), ha='right')
+
+# # Plot 5: Dx by Object Attributes
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='Dx',
+#     aggfunc='mean'
+# )
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dx'}, ax=axes[1, 1])
+# axes[1, 1].set_title(f'Dx')
+# axes[1, 1].set_xlabel('Prompt Spatial Relationship')
+# axes[1, 1].set_ylabel('Object Attributes')
+# axes[1, 1].tick_params(axis='x', rotation=45)
+# axes[1, 1].set_xticklabels(axes[1, 1].get_xticklabels(), ha='right')
+# # Get rid of the y ticks
+# axes[1, 1].set_yticks([])
+
+
+# # Plot 6: Dy by Object Attributes
+# pivot_df = prompt_eval_syn_df.pivot_table(
+#     index=['color1', 'shape1', 'color2', 'shape2'], 
+#     columns='relation_str', 
+#     values='Dy',
+#     aggfunc='mean'
+# )
+# sns.heatmap(pivot_df, annot=True, cmap='viridis', fmt='.1f', cbar_kws={'label': 'Dy'}, ax=axes[1, 2])
+# axes[1, 2].set_title(f'Dy')
+# axes[1, 2].set_xlabel('Prompt Spatial Relationship')
+# axes[1, 2].set_ylabel('Object Attributes')
+# axes[1, 2].tick_params(axis='x', rotation=45)
+# axes[1, 2].set_xticklabels(axes[1, 2].get_xticklabels(), ha='right')
+# # Get rid of the y ticks
+# axes[1, 2].set_yticks([])
+
+# plt.suptitle(f'Combined Evaluation Results (mean of 100 samples per prompt)\n{model_run_name}', fontsize=16, y=0.98)
+# plt.tight_layout()
+# saveallforms(eval_dir, f"relation_eval_heatmap_all_synopsis_{model_run_name}")
+# plt.show()
 
 # %%
 
