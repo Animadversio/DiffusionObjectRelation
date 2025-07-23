@@ -35,7 +35,7 @@ sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
 from utils.pixart_sampling_utils import pipeline_inference_custom, \
     PixArtAlphaPipeline_custom
 from utils.pixart_utils import state_dict_convert
-from utils.text_encoder_control_lib import RandomEmbeddingEncoder_wPosEmb
+from utils.text_encoder_control_lib import RandomEmbeddingEncoder_wPosEmb, RandomEmbeddingEncoder
 from utils.image_utils import pil_images_to_grid
 from utils.attention_map_store_utils import replace_attn_processor, AttnProcessor2_0_Store, PixArtAttentionVisualizer_Store
 from utils.cv2_eval_utils import find_classify_object_masks, evaluate_parametric_relation
@@ -169,10 +169,13 @@ model_run_name = "objrel_T5_DiT_mini_pilot" # "objrel_rndembdposemb_DiT_B_pilot"
 ckpt_name = "epoch_4000_step_160000.pth" # "epoch_4000_step_160000.pth" 
 text_encoder_type = "T5" 
 suffix = ""
+
+model_run_name = "objrel_rndemb_DiT_B_pilot" # "objrel_rndembdposemb_DiT_B_pilot" 
+text_encoder_type = "RandomEmbeddingEncoder" 
+suffix = ""
 # %% [markdown]
 # ### DiT network at float16, T5 at bfloat16
 # %%
-text_feat_dir_old = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRel_pilot_rndemb/caption_feature_wmask'
 T5_path = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts/t5-v1_1-xxl"
 tokenizer = T5Tokenizer.from_pretrained(T5_path, ) #subfolder="tokenizer")
 if text_encoder_type == "T5":
@@ -180,19 +183,28 @@ if text_encoder_type == "T5":
     T5_dtype = torch.bfloat16
     text_encoder = T5EncoderModel.from_pretrained(T5_path, load_in_8bit=False, torch_dtype=T5_dtype, )
 elif text_encoder_type == "RandomEmbeddingEncoder_wPosEmb":
+    text_feat_dir_old = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRel_pilot_rndemb/caption_feature_wmask'
     emb_data = th.load(join(text_feat_dir_old, "word_embedding_dict.pt")) 
     text_encoder = RandomEmbeddingEncoder_wPosEmb(emb_data["embedding_dict"], 
                                                 emb_data["input_ids2dict_ids"], 
                                                 emb_data["dict_ids2input_ids"], 
                                                 max_seq_len=20, embed_dim=4096,
                                                 wpe_scale=1/6).to("cuda")
+elif text_encoder_type == "RandomEmbeddingEncoder":
+    text_feat_dir_old = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRel_pilot_rndemb/caption_feature_wmask'
+    emb_data = th.load(join(text_feat_dir_old, "word_embedding_dict.pt")) 
+    text_encoder = RandomEmbeddingEncoder(emb_data["embedding_dict"], 
+                                                emb_data["input_ids2dict_ids"], 
+                                                emb_data["dict_ids2input_ids"], 
+                                                ).to("cuda")
 
 # %%
 savedir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/{model_run_name}"
 # figdir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}{suffix}/cross_attn_vis_figs"
-result_dir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/{model_run_name}{suffix}"
+result_dir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/analysis_results/{model_run_name}{suffix}"
 eval_dir = join(savedir, "large_scale_eval_posthoc")
 os.makedirs(eval_dir, exist_ok=True)
+#%%
 
 
 config = read_config(join(savedir, 'config.py'))

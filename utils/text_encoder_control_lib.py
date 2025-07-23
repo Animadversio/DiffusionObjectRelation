@@ -28,12 +28,23 @@ class RandomEmbeddingEncoder(nn.Module):
         embeddings = self.embedding_dict[indices]
         return embeddings, attention_mask
     
-    def to(self, device):
-        self.embedding_dict = self.embedding_dict.to(device)
-        # self.input_ids2dict_ids = self.input_ids2dict_ids.to(device)
-        # self.dict_ids2input_ids = self.dict_ids2input_ids.to(device)
-        return self
+    # def to(self, device):
+    #     self.embedding_dict = self.embedding_dict.to(device)
+    #     # self.input_ids2dict_ids = self.input_ids2dict_ids.to(device)
+    #     # self.dict_ids2input_ids = self.dict_ids2input_ids.to(device)
+    #     return self
     
+    def to(self, device=None, dtype=None):  # override to track moves
+        # Move embeddings and pos-enc to target device/dtype
+        if dtype is not None:
+            self.embedding_dict = self.embedding_dict.to(dtype=dtype)
+        if device is not None:
+            self.embedding_dict = self.embedding_dict.to(device)
+
+        # Update tracking attributes
+        self.device = self.embedding_dict.device
+        self.dtype = self.embedding_dict.dtype
+        return self
 
 def get_positional_encodings(seq_len, d_model, device='cpu'):
     """
