@@ -139,7 +139,7 @@ torchrun --nproc_per_node=1 \
     --loss_report_name "train_loss"
 
 # Train conditional diffusion on dataset of mixed compositions. POC: Hannah
-# TODO
+# Status: Done. 
 cd ~/Github/DiffusionObjectRelation
 torchrun --nproc_per_node=1 \
     PixArt-alpha/train_scripts/train_with_visualize.py \

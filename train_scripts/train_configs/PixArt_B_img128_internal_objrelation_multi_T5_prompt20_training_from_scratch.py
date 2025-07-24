@@ -3,7 +3,7 @@ data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Proje
 
 image_list_json = ['data_info.json',]
 
-data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelMulti_pilot1', 
+data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRelMulti_pilot1', 
             image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
@@ -49,21 +49,31 @@ prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/D
 
 validation_prompts = [
     "triangle",
-    "blue triangle",
-    "red square",
     "square",
     "circle",
+    "red",
+    "blue",
+    "red square",
     "blue circle",
-    "triangle is to the upper left of square", 
-    "triangle is to the left of square", 
-    "triangle is to the left of triangle", 
-    "circle is below red square",
-    "red circle is to the left of blue square",
-    "blue square is to the right of red circle",
-    "red circle is above square",
-    "triangle is above red circle",
-]
-
+    "blue triangle",
+    "a red square",
+    "a blue circle",
+    "a blue triangle",
+    "the blue square",
+    "the red circle",
+    "the triangle",
+    "the square",
+    "the circle",
+    "the",
+    "or",
+    "an",
+    "red",
+    "blue",
+    "the red square above the blue circle",
+    "blue triangle to the left of red square",
+    "red circle below blue triangle",
+    "red circle to the right of blue triangle",
+    ]
 
 
 
