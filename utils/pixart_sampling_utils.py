@@ -244,6 +244,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         device: str = "cuda",
         inference_step_star: Optional[int] = None,
         post_prompt_attention_mask: Optional[torch.Tensor] = None,
+        prompt_dtype = None,
         **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         """
@@ -398,6 +399,11 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
             clean_caption=clean_caption,
             max_sequence_length=max_sequence_length,
         )
+        if prompt_dtype is not None:
+            prompt_embeds = prompt_embeds.to(dtype=prompt_dtype)
+            prompt_attention_mask = prompt_attention_mask.to(dtype=prompt_dtype)
+            negative_prompt_embeds = negative_prompt_embeds.to(dtype=prompt_dtype)
+            negative_prompt_attention_mask = negative_prompt_attention_mask.to(dtype=prompt_dtype)
 
         if inference_step_star is not None and post_prompt_attention_mask is not None:
             # Encode prompt for post operations

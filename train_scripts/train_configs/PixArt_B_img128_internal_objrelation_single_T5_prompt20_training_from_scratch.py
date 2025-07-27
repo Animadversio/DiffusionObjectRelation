@@ -3,7 +3,7 @@ data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Proje
 
 image_list_json = ['data_info.json',]
 
-data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelSingle_pilot1', 
+data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/objectRelSingle_pilot2', 
             image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
@@ -52,8 +52,8 @@ validation_prompts = [
     "blue triangle",
     "red square",
     "square",
-    "circle",
-    "blue cirle",
+    "cirle",
+    "blue circle",
     "triangle is to the upper left of square", 
     "triangle is to the left of square", 
     "triangle is to the left of triangle", 

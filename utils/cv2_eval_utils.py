@@ -129,18 +129,20 @@ def find_classify_object_masks(image, area_threshold=100, radius=16.0):
     return classified_objects_df, object_masks
 
 
-def identity_spatial_relation(x1, y1, x2, y2):
+def identity_spatial_relation(x1, y1, x2, y2, threshold=5):
     """Turn two points into a string of spatial relation
     Args:
         x1, y1: x, y coordinates of the first point
         x2, y2: x, y coordinates of the second point
+        threshold: threshold for the spatial relation
     Returns:
         observed_relation: string of spatial relation
+          one of ['above', 'below', 'left', 'right', 'upper_left', 'upper_right', 'lower_left', 'lower_right']
     """
     dx = x1 - x2  # Positive means shape1 is to the right
     dy = y1 - y2  # Positive means shape1 is lower
     # Define thresholds for "directly" above/below/left/right
-    threshold = 5  # pixels
+    # threshold = 5  # pixels
     if abs(dx) <= threshold:  # Roughly aligned vertically
         if dy < 0:
             observed_relation = 'above'
@@ -234,9 +236,35 @@ def identity_spatial_relation(x1, y1, x2, y2):
 #         return True, "correct"
 #     else:
 #         return False, "spatial relation incorrect" # and abs(blue_x - red_x) < 10
+# Add spatial_relation_loose column based on Dx, Dy and prompt_id
+def evaluate_spatial_relation_loose_row(dx, dy, relation_str, threshold = 8):
+    """
+    Evaluate spatial relationship with looser criteria based on Dx, Dy and prompt_id.
+    This allows for more tolerance in position relative to the strict spatial_relationship column.
+    """
+    # Define looser thresholds (you can adjust these values)
+    # Map prompt_ids to expected spatial relationships
+    # This is a simplified mapping - you may need to adjust based on your actual prompt structure
+    if relation_str == "above":  # "above"
+        return dy < -threshold
+    elif relation_str == "below":  # "below" 
+        return dy > +threshold
+    elif relation_str == "left":  # "left"
+        return dx < -threshold
+    elif relation_str == "right":  # "right"
+        return dx > +threshold
+    elif relation_str == "upper_left":  # "above_left"
+        return dx < -threshold and dy < -threshold
+    elif relation_str == "upper_right":  # "above_right"
+        return dx > +threshold and dy < -threshold
+    elif relation_str == "lower_left":  # "below_left"
+        return dx < -threshold and dy > +threshold
+    elif relation_str == "lower_right":  # "below_right"
+        return dx > +threshold and dy > +threshold
+    else:
+        return False
 
-
-def evaluate_parametric_relation(df, scene_info, MARGIN=25):
+def evaluate_parametric_relation(df, scene_info, color_margin=25, spatial_threshold=5):
     """
     Evaluates parametric relationships between objects in a DataFrame.
 
@@ -251,7 +279,10 @@ def evaluate_parametric_relation(df, scene_info, MARGIN=25):
     """
     # Validate input
     if df.empty:
-        return {"overall": False, "shape": False, "color": False, "spatial_relationship": False, "reason": "no object"}
+        return {"overall": False, "overall_loose": False, "shape": False, "color": False, 
+                "exist_binding": False, "unique_binding": False, 
+                "spatial_relationship_loose": False, "spatial_relationship": False, "reason": "no object",
+                "Dx": np.nan, "Dy": np.nan, "x1": np.nan, "y1": np.nan, "x2": np.nan, "y2": np.nan}
     if not all(col in df.columns for col in ['Shape', 'Color (RGB)', 'Center (x, y)']):
         raise ValueError("DataFrame must contain 'Shape', 'Color (RGB)', and 'Center (x, y)' columns.")
 
@@ -262,49 +293,85 @@ def evaluate_parametric_relation(df, scene_info, MARGIN=25):
     spatial_relationship = scene_info["spatial_relationship"]
 
     # Add color classifications to the DataFrame
-    df["is_red"] = df['Color (RGB)'].apply(lambda rgb: rgb[0] > 255 - MARGIN and rgb[1] < MARGIN and rgb[2] < MARGIN)
-    df["is_blue"] = df['Color (RGB)'].apply(lambda rgb: rgb[2] > 255 - MARGIN and rgb[0] < MARGIN and rgb[1] < MARGIN)
+    df["is_red"] = df['Color (RGB)'].apply(lambda rgb: rgb[0] > 255 - color_margin and rgb[1] < color_margin and rgb[2] < color_margin)
+    df["is_blue"] = df['Color (RGB)'].apply(lambda rgb: rgb[2] > 255 - color_margin and rgb[0] < color_margin and rgb[1] < color_margin)
 
     # Check for object existence
+    # Filter dataframe to find objects matching the first object's criteria
+    # Apply shape filter: if shape1 is specified, match objects with that shape (case-insensitive)
+    # Apply color filter: if color1 is specified, match objects with that color
+    # - If color1 is "red", filter for objects where is_red is True
+    # - If color1 is "blue", filter for objects where is_blue is True
+    # - If color1 is None, no color filtering is applied (all objects pass)
     obj1 = df[
-        ((df["Shape"] == shape1) if shape1 else True) &
+        ((df["Shape"].str.lower() == shape1.lower()) if shape1 else True) &
         ((df["is_red"] if color1 == "red" else True) if color1 else True) &
         ((df["is_blue"] if color1 == "blue" else True) if color1 else True)
     ]
     obj2 = df[
-        ((df["Shape"] == shape2) if shape2 else True) &
+        ((df["Shape"].str.lower() == shape2.lower()) if shape2 else True) &
         ((df["is_red"] if color2 == "red" else True) if color2 else True) &
         ((df["is_blue"] if color2 == "blue" else True) if color2 else True)
     ]
 
     # Evaluate individual correctness
+    # Check if shape requirements are satisfied for both objects
+    # For each shape (shape1 and shape2):
+    # - If shape is None, requirement is automatically satisfied (no shape constraint)
+    # - If shape is specified, check that at least one object with that shape exists in the dataframe
+    # Both shape1 and shape2 requirements must be satisfied for shape_correct to be True
     shape_correct = (
-        (shape1 is None or any(df["Shape"] == shape1)) and
-        (shape2 is None or any(df["Shape"] == shape2))
+        (shape1 is None or any(df["Shape"].str.lower() == shape1.lower())) and
+        (shape2 is None or any(df["Shape"].str.lower() == shape2.lower()))
     )
+    # Check if color requirements are satisfied for both objects
+    # For each color (color1 and color2):
+    # - If color is None, requirement is automatically satisfied (no color constraint)
+    # - If color is "red", check that at least one red object exists in the dataframe
+    # - If color is "blue", check that at least one blue object exists in the dataframe
+    # Both color1 and color2 requirements must be satisfied for color_correct to be True
     color_correct = (
         (color1 is None or (color1 == "red" and any(df["is_red"])) or (color1 == "blue" and any(df["is_blue"]))) and
         (color2 is None or (color2 == "red" and any(df["is_red"])) or (color2 == "blue" and any(df["is_blue"])))
     )
-
+    exist_correct_binding = len(obj1) > 0 and len(obj2) > 0
+    unique_correct_binding = len(obj1) == 1 and len(obj2) == 1
     # Spatial relationship correctness
     if len(obj1) == 1 and len(obj2) == 1:
         x1, y1 = obj1["Center (x, y)"].iloc[0]
         x2, y2 = obj2["Center (x, y)"].iloc[0]
-        observed_relation = identity_spatial_relation(x1, y1, x2, y2)
+        observed_relation = identity_spatial_relation(x1, y1, x2, y2, threshold=spatial_threshold)
         #TODO: fix this, maybe too stringent! is upper right also count as right?
         spatial_correct = spatial_relationship == observed_relation
+        Dx = x1 - x2
+        Dy = y1 - y2
+        spatial_correct_loose = evaluate_spatial_relation_loose_row(Dx, Dy, spatial_relationship, threshold=spatial_threshold)
     else:
+        Dx = np.nan
+        Dy = np.nan
+        x1, y1 = np.nan, np.nan
+        x2, y2 = np.nan, np.nan
         spatial_correct = False
+        spatial_correct_loose = False
 
     # Overall correctness
-    overall_correct = shape_correct and color_correct and spatial_correct
-
+    overall_correct = shape_correct and color_correct and unique_correct_binding and spatial_correct
+    overall_correct_loose = shape_correct and color_correct and unique_correct_binding and spatial_correct_loose
     return {
         "overall": overall_correct,
+        "overall_loose": overall_correct_loose,
         "shape": shape_correct,
         "color": color_correct,
+        "exist_binding": exist_correct_binding,
+        "unique_binding": unique_correct_binding,
         "spatial_relationship": spatial_correct,
+        "spatial_relationship_loose": spatial_correct_loose,
+        "Dx": Dx,
+        "Dy": Dy,
+        "x1": x1,
+        "y1": y1,
+        "x2": x2,
+        "y2": y2,
     }
     
 
