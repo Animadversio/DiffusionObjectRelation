@@ -25,6 +25,9 @@ Usage:
 Authors: Hannah Kim, Binxu Wang
 Date: 2025-07-25
 """
+#%%
+%load_ext autoreload
+%autoreload 2
 
 # %%
 import os
@@ -57,8 +60,6 @@ from diffusers import AutoencoderKL
 
 from datasets import load_dataset
 
-from configs.dataset_generation_config import * # All information here! 
-from configs.dataset_generation_config import dataset_type
 
 # Set up sys.path for custom modules
 sys.path.append("/n/home12/hjkim/Github/DiffusionObjectRelation/PixArt-alpha")
@@ -74,6 +75,31 @@ from utils.custom_text_encoding_utils import RandomEmbeddingEncoder_wPosEmb, Ran
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # %% Define correct dataset configuration 
+
+from configs.dataset_generation_config import * # All information here! 
+from configs.exp1_single_t5 import * # All information here! 
+# from configs.exp2_single_random import * # All information here! 
+from configs.exp3_double_t5 import * # All information here! 
+# from configs.exp4_double_random import * # All information here! 
+from configs.exp5_mixed_t5 import * # All information here! 
+# from configs.exp6_mixed_random import * # All information here! 
+# from configs.dataset_generation_config import dataset_type
+
+print(f"Using dataset configuration: {dataset_name}")
+print(f"Imported from config:")
+print(f"- num_images: {num_images}")
+print(f"- resolution: {resolution}")
+print(f"- radius: {radius}")
+print(f"- single_ratio: {single_ratio}")
+print(f"- model_max_length: {model_max_length}")
+print(f"- dataset_type: {dataset_type}")
+print(f"- encoder_type: {encoder_type}")
+print(f"- dataset_name: {dataset_name}")
+print(f"- pixart_dir: {pixart_dir}")
+print(f"- save_dir: {save_dir}")
+print(f"- using_existing_img_txt: {using_existing_img_txt}")
+print(f"- existing_dataset_name: {existing_dataset_name}")
+
 
 dataset_class_map = {
     "Single": SingleShapeDataset,
@@ -96,12 +122,13 @@ else:
 root_dir = f"{pixart_dir}/training_datasets/{dataset_name}"
 prompt_cache_name = f'{dataset_name}_{encoder_type}emb_{model_max_length}token'
 prompt_cache_dir = f"{pixart_dir}/output/{prompt_cache_name}"
-existing_dataset_root =f"{pixart_dir}/training_datasets/{'objectRelSingle_pilot_temp'}"
+existing_dataset_root =f"{pixart_dir}/training_datasets/{existing_dataset_name}"
 
 
 # %% Generate the dataset 
 
 if not using_existing_img_txt:
+    print(f"Generating dataset from scratch")
     #Create the dataset from scratch 
     transform = transforms.Compose([
         lambda x: x.convert("RGB"),
@@ -150,6 +177,7 @@ if not using_existing_img_txt:
     with open(absolute_json_name, "w") as json_file:
         json.dump(data_info, json_file)
 else:
+    print(f"Using existing dataset: {existing_dataset_name}, copying from {existing_dataset_root} to {root_dir}")
     import shutil
     # Copy from the existing img_txt_dir
     # Copy files from existing img_txt_dir to new location
@@ -214,9 +242,7 @@ word_embedding_dir = "word_embedding_dict.pt"
 
 if encoder_type == "T5":
     # T5_dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}[args.T5_dtype]
-    print(f"Extracting caption t5 features for {encoder_type} encoder")
-    extract_caption_t5(max_tokens=model_max_length)
-    
+
     T5_path = f"{pixart_dir}/output/pretrained_models/t5_ckpts/t5-v1_1-xxl"
     tokenizer = T5Tokenizer.from_pretrained(T5_path)
     T5_dtype = torch.bfloat16
@@ -253,8 +279,16 @@ text_feat_dir = join(root_dir, "caption_feature_wmask")
 
 # %% Process the embeddings 
 
-#Tokenize the captions for random embeddings
-if not (encoder_type == 'T5'):
+#Tokenize the captions
+if encoder_type == 'T5':
+    print(f"Extracting caption t5 features for {encoder_type} encoder")
+    # if text_feat_dir exists, clean it
+    if os.path.exists(text_feat_dir):
+        shutil.rmtree(text_feat_dir)
+    os.makedirs(text_feat_dir, exist_ok=True)
+    extract_caption_t5(max_tokens=model_max_length)
+    
+else:
     print(f"Tokenizing captions for {encoder_type} encoder")
     if not os.path.exists(text_feat_dir):
         os.makedirs(text_feat_dir, exist_ok=True)
@@ -264,13 +298,15 @@ if not (encoder_type == 'T5'):
                                             tokenizer, 
                                             num_captions=num_images, 
                                             model_max_length=model_max_length)
-for sample_idx in trange(num_images):
+    
+    for sample_idx in trange(num_images):
         input_ids = input_ids_tsr[sample_idx]
         embeddings = text_encoder(input_ids)[0].cpu()
         np.savez(join(text_feat_dir, 
-                      f"{sample_idx}.npz"), 
-                      caption_feature=embeddings.numpy(), 
-                      attention_mask=attention_mask_col[sample_idx].numpy())
+                    f"{sample_idx}.npz"), 
+                    caption_feature=embeddings.numpy(), 
+                    attention_mask=attention_mask_col[sample_idx].numpy())
+
 
 # %% Generate and save the validation prompt embeddings 
 caption_embeddings = save_prompt_embeddings_randemb(

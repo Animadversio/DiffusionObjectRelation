@@ -10,6 +10,7 @@ dataset_name = "objectRelDouble_pilot1_RndEmbPos"
 pixart_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt"
 save_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/Diffusion_ObjectRelation"
 using_existing_img_txt = True
+existing_dataset_name = "objectRelSingle_pilot_temp"
 
 validation_prompts =  [
         "triangle",
