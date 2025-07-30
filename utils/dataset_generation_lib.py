@@ -39,41 +39,95 @@ from diffusers import AutoencoderKL
 from datasets import load_dataset
 
 
-class SingleShapeDataset(Dataset):
-    def __init__(self, num_images, resolution=64, radius=8, transform=None):
+class BaseShapeDataset(Dataset):
+    """
+    Base class for all shape datasets with unified interface.
+    All subclasses should implement the same __init__ signature.
+    """
+    def __init__(self, num_images=10000, resolution=64, radius=16, transform=None, **kwargs):
+        """
+        Unified initialization for all shape datasets.
+        
+        Parameters:
+        - num_images: Number of images to generate
+        - resolution: Image resolution (width=height)
+        - radius: Radius/size of shapes
+        - transform: Optional torchvision transforms
+        - **kwargs: Additional parameters specific to each dataset type
+        """
         self.num_images = num_images
-        self.shapes = ['triangle', 'circle', 'square']
-        self.colors = ['red', 'blue']
-        self.articles = ['a', 'an', 'the', 'or', '']
-        self.canvas_size = resolution
+        self.resolution = resolution
         self.radius = radius
-        self.transform = transform 
+        self.transform = transform
+        self.canvas_size = resolution
+        
+        # Common attributes
+        self.shapes = ['triangle', 'circle', 'square']
         self.shape_to_idx = {'triangle': 0, 'circle': 1, 'square': 2}
-        self.color_to_rgb = {'red': 'red', 'blue': 'blue'}
-
-    def __len__(self):
-        return self.num_images
+        self.idx_to_shape = {0: 'triangle', 1: 'circle', 2: 'square'}
+        
+        # Store additional kwargs for subclasses
+        self.kwargs = kwargs
+        
+        # Initialize dataset-specific attributes
+        self._init_dataset_specific()
     
-    def draw_shape_on_image(self, img, shape, location, color):
+    def _init_dataset_specific(self):
+        """Override in subclasses to initialize dataset-specific attributes"""
+        pass
+    
+    def draw_shape_on_image(self, img, shape, location, color='black'):
+        """
+        Draws a specified shape at a given location on the provided image.
+
+        Parameters:
+        - img: PIL Image object to draw on.
+        - shape: String specifying the shape ('triangle', 'circle', 'square').
+        - location: Tuple (x, y) specifying the location of the shape's center.
+        - color: Color to fill the shape with.
+
+        Returns:
+        - img: PIL Image object with the shape drawn on it.
+        """
         draw = ImageDraw.Draw(img)
         x, y = location
-        
+
         if shape == 'circle':
-            r = self.radius
-            draw.ellipse([(x - r, y - r), (x + r, y + r)], fill=color)
+            r = self.radius  # Radius
+            leftUpPoint = (x - r, y - r)
+            rightDownPoint = (x + r, y + r)
+            draw.ellipse([leftUpPoint, rightDownPoint], fill=color)
+
         elif shape == 'square':
-            s = self.radius * 2
-            draw.rectangle([(x - s//2, y - s//2), (x + s//2, y + s//2)], fill=color)
+            s = self.radius * 2  # Side length
+            leftUpPoint = (x - s // 2, y - s // 2)
+            rightDownPoint = (x + s // 2, y + s // 2)
+            draw.rectangle([leftUpPoint, rightDownPoint], fill=color)
+
         elif shape == 'triangle':
-            s = self.radius * 2
-            h = s * (3 ** 0.5) / 2
+            s = self.radius * 2  # Side length
+            h = s * (3 ** 0.5) / 2  # Height of the equilateral triangle
             point1 = (x, y - h / 3)
             point2 = (x - s / 2, y + h * 2 / 3)
             point3 = (x + s / 2, y + h * 2 / 3)
             draw.polygon([point1, point2, point3], fill=color)
 
-        return img  
+        else:
+            raise ValueError("Shape must be 'triangle', 'circle', or 'square'.")
 
+        return img
+
+
+class SingleShapeDataset(BaseShapeDataset):
+    def _init_dataset_specific(self):
+        """Initialize single shape dataset specific attributes"""
+        self.colors = ['red', 'blue']
+        self.articles = ['a', 'an', 'the', 'or', '']
+        self.color_to_rgb = {'red': 'red', 'blue': 'blue'}
+
+    def __len__(self):
+        return self.num_images
+    
     def __getitem__(self, idx):
         # Blank image
         img = Image.new('RGB', (self.canvas_size, self.canvas_size), 'gray')
@@ -108,23 +162,10 @@ class SingleShapeDataset(Dataset):
 
         return img, labels
 
-class DoubleShapeDataset(Dataset):
-    def __init__(self, num_images, resolution=64, radius=16, transform=None):
-        """
-        Initializes the dataset.
 
-        Parameters:
-        - num_images: Integer specifying the number of images in the dataset.
-        - transform: Optional torchvision transforms to apply to the images.
-        """
-        self.num_images = num_images
-        self.shapes = ['triangle', 'circle', 'square']
-        self.canvas_size = resolution
-        self.transform = transform
-        self.shape_to_idx = {'triangle': 0, 'circle': 1, 'square': 2}
-        self.idx_to_shape = {0: 'triangle', 1: 'circle', 2: 'square'}
-        self.radius = radius
-
+class DoubleShapeDataset(BaseShapeDataset):
+    def _init_dataset_specific(self):
+        """Initialize double shape dataset specific attributes"""
         # Spatial relationship phrases for variety
         self.spatial_phrases = {
             'upper_left': ['to the upper left of', 'above and to the left of', 'diagonally up and left from'],
@@ -193,46 +234,6 @@ class DoubleShapeDataset(Dataset):
     def __len__(self):
         return self.num_images
 
-    def draw_shape_on_image(self, img, shape, location, color='black'):
-        """
-        Draws a specified shape at a given location on the provided image.
-
-        Parameters:
-        - img: PIL Image object to draw on.
-        - shape: String specifying the shape ('triangle', 'circle', 'square').
-        - location: Tuple (x, y) specifying the location of the shape's center.
-
-        Returns:
-        - img: PIL Image object with the shape drawn on it.
-        """
-        draw = ImageDraw.Draw(img)
-        x, y = location
-
-        if shape == 'circle':
-            r = self.radius  # Radius
-            leftUpPoint = (x - r, y - r)
-            rightDownPoint = (x + r, y + r)
-            draw.ellipse([leftUpPoint, rightDownPoint], fill=color)
-
-        elif shape == 'square':
-            s = self.radius * 2  # Side length
-            leftUpPoint = (x - s // 2, y - s // 2)
-            rightDownPoint = (x + s // 2, y + s // 2)
-            draw.rectangle([leftUpPoint, rightDownPoint], fill=color)
-
-        elif shape == 'triangle':
-            s = self.radius * 2  # Side length
-            h = s * (3 ** 0.5) / 2  # Height of the equilateral triangle
-            point1 = (x, y - h / 3)
-            point2 = (x - s / 2, y + h * 2 / 3)
-            point3 = (x + s / 2, y + h * 2 / 3)
-            draw.polygon([point1, point2, point3], fill=color)
-
-        else:
-            raise ValueError("Shape must be 'triangle', 'circle', or 'square'.")
-
-        return img
-
     def __getitem__(self, idx):
         """
         Generates one image and its labels.
@@ -295,28 +296,34 @@ class DoubleShapeDataset(Dataset):
         }
 
         return img, labels
+
+
+class MixedShapesDataset(BaseShapeDataset):
+    def _init_dataset_specific(self):
+        """Initialize mixed shapes dataset specific attributes"""
+        # Extract parameters from kwargs
+        self.single_ratio = self.kwargs.get('single_ratio', 0.3)
         
-
-"""
-
-SingleShapeDataset: single_dataset = None, double_dataset = None, single_ratio=1, total_length=10000
-DoubleShapeDataset: single_dataset = None, double_dataset = None, single_ratio=0, total_length=10000
-MixedShapesDataset: single_dataset, double_dataset, single_ratio, total_length
-"""
-
-class MixedShapesDataset(Dataset):
-    def __init__(self, single_dataset, double_dataset, single_ratio=0.3, total_length=10000):
+        # Create single and double datasets
+        single_dataset = SingleShapeDataset(
+            num_images=self.num_images,
+            resolution=self.resolution,
+            radius=self.radius,
+            transform=self.transform
+        )
+        
+        double_dataset = DoubleShapeDataset(
+            num_images=self.num_images,
+            resolution=self.resolution,
+            radius=self.radius,
+            transform=self.transform
+        )
+        
         self.single_dataset = single_dataset
         self.double_dataset = double_dataset
-        self.single_ratio = single_ratio 
 
-        if total_length is None:
-            self.length = len(single_dataset) + len(double_dataset)
-        else:
-            self.length = total_length 
-
-        num_single = int(self.length * self.single_ratio)
-        num_double = self.length - num_single
+        num_single = int(self.num_images * self.single_ratio)
+        num_double = self.num_images - num_single
         self.sample_types = ['single'] * num_single + ['double'] * num_double
         random.shuffle(self.sample_types)
 
@@ -331,7 +338,7 @@ class MixedShapesDataset(Dataset):
         self.idx_to_type = {0: 'single', 1: 'double'}
 
     def __len__(self):
-        return self.length 
+        return self.num_images 
 
     def __getitem__(self, idx):
         sample_type = self.sample_types[idx]
@@ -342,7 +349,7 @@ class MixedShapesDataset(Dataset):
             img, labels = self.single_dataset[self.single_indices[self.single_ptr]]
             self.single_ptr += 1
 
-         # Convert to double-object format for consistency
+            # Convert to double-object format for consistency
             new_labels = {
                 'shape1': labels['shape'],
                 'location1': labels['location'],

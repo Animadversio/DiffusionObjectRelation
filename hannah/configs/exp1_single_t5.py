@@ -1,15 +1,17 @@
-{
-    "num_images": 10000,
-    "resolution": 128,
-    "radius": 16,
-    "ObjRelDataset": "Single",
-    "encoder_type": "RandomEmbeddingEncoder_wPosEmb",
-    "model_max_length": 20,
-    "dataset_name": "objectRelSingle_pilot_RndEmbPos",
-    "pixart_dir": "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt",
-    "save_dir": "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/Diffusion_ObjectRelation",
-    "using_existing_img_txt": true,
-    "validation_prompts": [
+# Experiment 1: Single dataset with T5 embeddings
+num_images = 10000
+resolution = 128
+radius = 16
+single_ratio = 0.3
+model_max_length = 20
+dataset_type = "Single"
+encoder_type = "T5"
+dataset_name = "objectRelSingle_pilot1_T5"
+pixart_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt"
+save_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/Diffusion_ObjectRelation"
+using_existing_img_txt = True
+
+validation_prompts =  [
         "triangle",
         "square",
         "circle",
@@ -35,5 +37,4 @@
         "blue triangle to the left of red square",
         "red circle below blue triangle",
         "red circle to the right of blue triangle"
-        ]
-}
+        ] 
