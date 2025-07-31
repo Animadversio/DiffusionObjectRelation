@@ -3,7 +3,7 @@ data_root = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Proje
 
 image_list_json = ['data_info.json',]
 
-data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRelSingle_T5', 
+data = dict(type='InternalData', root='/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRelMixed_pilot1_RndEmb', 
             image_list_json=image_list_json, transform='default_train', load_vae_feat=True, max_length=20)
 image_size = 128
 
@@ -45,35 +45,36 @@ eval_sampling_steps = 250
 log_interval = 20
 do_visualize_samples = True
 
-prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/prompt_cache_t5emb_multi"
+prompt_cache_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/objectRelMixed_pilot1_RndEmb_RandomEmbeddingEncoderemb_20token"
 
-validation_prompts =  [
-        "triangle",
-        "square",
-        "circle",
-        "red",
-        "blue",
-        "red square",
-        "blue circle",
-        "blue triangle",
-        "a red square",
-        "a blue circle",
-        "a blue triangle",
-        "the blue square",
-        "the red circle",
-        "the triangle",
-        "the square",
-        "the circle",
-        "the",
-        "or",
-        "an",
-        "red",
-        "blue",
-        "the red square above the blue circle",
-        "blue triangle to the left of red square",
-        "red circle below blue triangle",
-        "red circle to the right of blue triangle"
-        ] 
+
+validation_prompts = [
+    "triangle",
+    "square",
+    "circle",
+    "red",
+    "blue",
+    "red square",
+    "blue circle",
+    "blue triangle",
+    "a red square",
+    "a blue circle",
+    "a blue triangle",
+    "the blue square",
+    "the red circle",
+    "the triangle",
+    "the square",
+    "the circle",
+    "the",
+    "or",
+    "an",
+    "red",
+    "blue",
+    "the red square above the blue circle",
+    "blue triangle to the left of red square",
+    "red circle below blue triangle",
+    "red circle to the right of blue triangle",
+    ]
 
 
 
