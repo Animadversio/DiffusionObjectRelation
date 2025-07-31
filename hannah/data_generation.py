@@ -77,12 +77,16 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # %% Define correct dataset configuration 
 
 from configs.dataset_generation_config import * # All information here! 
-from configs.exp1_single_t5 import * # All information here! 
+# from configs.exp1_single_t5 import * # All information here! 
 # from configs.exp2_single_random import * # All information here! 
-from configs.exp3_double_t5 import * # All information here! 
-# from configs.exp4_double_random import * # All information here! 
-from configs.exp5_mixed_t5 import * # All information here! 
-# from configs.exp6_mixed_random import * # All information here! 
+# from configs.exp3_single_random_wposemb import * # All information here! 
+# from configs.exp4_double_t5 import * # All information here! 
+# from configs.exp5_double_random import * # All information here! 
+# from configs.exp6_double_random_wposemb import * # All information here! 
+# from configs.exp7_mixed_t5 import * # All information here! 
+# from configs.exp8_mixed_random import * # All information here! 
+from configs.exp9_mixed_random_wposemb import * # All information here! 
+
 # from configs.dataset_generation_config import dataset_type
 
 print(f"Using dataset configuration: {dataset_name}")
@@ -123,6 +127,8 @@ root_dir = f"{pixart_dir}/training_datasets/{dataset_name}"
 prompt_cache_name = f'{dataset_name}_{encoder_type}emb_{model_max_length}token'
 prompt_cache_dir = f"{pixart_dir}/output/{prompt_cache_name}"
 existing_dataset_root =f"{pixart_dir}/training_datasets/{existing_dataset_name}"
+
+print(f"Prompt cache directory: {prompt_cache_dir}")
 
 
 # %% Generate the dataset 
@@ -239,6 +245,7 @@ extract_img_vae()
 
 caption_feature_dir =  "caption_feature_wmask"
 word_embedding_dir = "word_embedding_dict.pt"
+emb_data_path = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/random_emd_dictionary/word_embedding_dict_randemb_new.pt'
 
 if encoder_type == "T5":
     # T5_dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}[args.T5_dtype]
@@ -251,22 +258,33 @@ if encoder_type == "T5":
                         load_in_8bit=False, 
                         torch_dtype=T5_dtype)
 elif encoder_type == "RandomEmbeddingEncoder_wPosEmb":
-    text_feat_dir_old = f'{pixart_dir}/training_datasets/objectRel_pilot_rndemb/{caption_feature_dir}'
-    emb_data = th.load(join(text_feat_dir_old, word_embedding_dir)) 
+    # text_feat_dir_old = f'{pixart_dir}/training_datasets/objectRel_pilot_rndemb/{caption_feature_dir}'
+
+    emb_data = th.load(emb_data_path) 
     text_encoder = RandomEmbeddingEncoder_wPosEmb(
                         emb_data["embedding_dict"], 
                         emb_data["input_ids2dict_ids"], 
                         emb_data["dict_ids2input_ids"], 
                         max_seq_len=20, embed_dim=4096,
                         wpe_scale=1/6).to("cuda")
+    
+    # For random encoders, use T5 tokenizer (the randomness comes from the encoder, not tokenizer)
+    T5_path = f"{pixart_dir}/output/pretrained_models/t5_ckpts/t5-v1_1-xxl"
+    tokenizer = T5Tokenizer.from_pretrained(T5_path)
+    
 elif encoder_type == "RandomEmbeddingEncoder":
-    text_feat_dir_old = f'{pixart_dir}/training_datasets/objectRel_pilot_rndemb/{caption_feature_dir}'
-    emb_data = th.load(join(text_feat_dir_old, word_embedding_dir)) 
+    # text_feat_dir_old = f'{pixart_dir}/training_datasets/objectRel_pilot_rndemb/{caption_feature_dir}'
+    emb_data = th.load(emb_data_path) 
     text_encoder = RandomEmbeddingEncoder(
                         emb_data["embedding_dict"], 
                         emb_data["input_ids2dict_ids"], 
                         emb_data["dict_ids2input_ids"], 
                         ).to("cuda")
+    
+    # For random encoders, use T5 tokenizer (the randomness comes from the encoder, not tokenizer)
+    T5_path = f"{pixart_dir}/output/pretrained_models/t5_ckpts/t5-v1_1-xxl"
+    tokenizer = T5Tokenizer.from_pretrained(T5_path)
+    
 else:
     raise NotImplementedError(f"Encoder type {encoder_type} not implemented")
 

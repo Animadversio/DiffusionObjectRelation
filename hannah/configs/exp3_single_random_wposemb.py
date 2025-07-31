@@ -2,11 +2,11 @@
 num_images = 10000
 resolution = 128
 radius = 16
-single_ratio = 0.3f
+single_ratio = 0.3
 model_max_length = 20
 dataset_type = "Single"
-encoder_type = "RandomEmbeddingEncoder"
-dataset_name = "objectRelSingle_pilot1_RndEmb"
+encoder_type = "RandomEmbeddingEncoder_wPosEmb"
+dataset_name = "objectRelSingle_pilot1_RndEmbPos"
 pixart_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt"
 save_dir = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/Diffusion_ObjectRelation"
 using_existing_img_txt = True
