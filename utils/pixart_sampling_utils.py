@@ -1,3 +1,28 @@
+"""
+PixArt Sampling and Visualization Utilities
+
+Tools for sampling and visualizing images from PixArt pipelines, including prompt embedding,
+latent trajectory visualization, and custom pipeline classes for advanced inference.
+
+Features:
+- Image Generation:
+  * visualize_prompts(pipeline, validation_prompts, prompt_cache_dir, max_length=120, ...) -> image_logs
+  * pipeline_inference_custom(pipeline, prompt, negative_prompt="", num_inference_steps=14, ...)
+
+- Trajectory Sampling:
+  * visualize_prompts_with_traj(pipeline, validation_prompts, prompt_cache_dir, ...) -> (logs, latents_traj, pred_traj, t_traj)
+  * visualize_prompts_with_traj_pretrained(pipeline, validation_prompts, ...) -> trajectory data
+  * visualize_prompts_with_traj_from_embed_dict(pipeline, uncond_dict, cond_dict, ...) -> trajectory data
+
+- Embedding Management:
+  * load_embed_and_mask(validation_prompts, prompt_cache_dir, max_length=120, device="cuda") -> embed_infos
+
+- Latent Conversion:
+  * latent_to_pil(latents, pipeline, weight_dtype=torch.float16) -> list[PIL.Image]
+
+Author: Binxu
+"""
+
 import os
 import torch
 from diffusers import AutoencoderKL, Transformer2DModel, PixArtAlphaPipeline, DPMSolverMultistepScheduler

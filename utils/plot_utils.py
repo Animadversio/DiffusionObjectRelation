@@ -1,3 +1,30 @@
+"""
+Plotting and Visualization Utilities
+
+Collection of plotting utilities for images and grids, including functions to display,
+save, and arrange images in grids, as well as helper functions for matplotlib-based visualization.
+
+Features:
+- Image Grid Operations:
+  * to_imgrid(img_tsr, *args, **kwargs) -> PIL.Image - Convert tensor to image grid
+  * show_imgrid(img_tsr, *args, **kwargs) -> PIL.Image - Display image grid
+  * save_imgrid(img_tsr, path, *args, **kwargs) -> PIL.Image - Save image grid
+  * save_imgrid_by_row(img_tsr, path, n_row=5, ...) - Save grid by rows
+
+- File Management:
+  * saveallforms(figdirs, fignm, figh=None, fmts=("png", "pdf")) - Save figure in multiple formats
+
+- Display Utilities:
+  * showimg(ax, imgarr, cbar=False, ylabel=None) - Show image on matplotlib axis
+  * show_image_without_frame(img) - Display image without axes
+  * off_axes(axs) - Turn off axis display
+
+- Grid Creation:
+  * create_image_grid(image_paths, grid_size, image_size=None, padding=0, bg_color=(255,255,255))
+
+Author: Binxu
+"""
+
 import os.path
 import numpy as np
 import torch

@@ -1,3 +1,23 @@
+"""
+Attention Masking Utilities for Text Prompts
+
+Tools for manipulating attention masks in text prompts, including masking specific
+semantic parts (objects, colors, spatial relations) using spaCy NLP and tokenizers.
+
+Features:
+- Semantic Token Extraction:
+  * get_meaningful_token_indices(prompt) -> dict - Extract objects, colors, spatial relations
+
+- Attention Masking:
+  * mask_padding_attention(prompt, tokenizer, model_max_length, device) -> (embeds, mask)
+  * mask_all_attention(prompt, tokenizer, model_max_length, device) -> (embeds, mask)
+  * mask_semantic_parts_attention(prompt, tokenizer, model_max_length, device, mask_parts) -> (embeds, mask)
+
+- Supported Mask Parts: ['color1', 'object1', 'spatial', 'color2', 'object2']
+
+Author: Jingxuan
+"""
+
 import spacy
 import torch
 

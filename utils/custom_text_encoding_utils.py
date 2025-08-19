@@ -1,3 +1,27 @@
+"""
+Custom Text Encoding Utilities
+
+Tools for tokenizing captions, generating random embeddings, and saving prompt embeddings
+with or without positional encodings. Designed for T5 and similar text encoders.
+
+Features:
+- Tokenization:
+  * tokenize_captions(caption_dir, tokenizer, num_captions=10000, model_max_length=20) -> (input_ids, masks)
+  * tokenize_embed_prompt(prompt, tokenizer, text_encoder, max_length=20, device="cuda") -> dict
+
+- Custom Text Encoders:
+  * RandomEmbeddingEncoder(embedding_dict=None, input_ids2dict_ids=None, ...) - Random embedding text encoder
+  * RandomEmbeddingPosEncoder(...) - Random embedding with positional encoding
+
+- Positional Encoding:
+  * get_positional_encodings(seq_len, d_model, device='cpu') -> torch.Tensor
+
+- Embedding Management:
+  * save_prompt_embeddings_randemb(tokenizer, text_encoder, validation_prompts, prompt_cache_dir, ...)
+
+Author: Binxu
+"""
+
 import os
 from os.path import join
 import torch

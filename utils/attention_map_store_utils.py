@@ -1,3 +1,30 @@
+"""
+Attention Map Storage Utils for PixArt Models
+
+Tools for capturing and storing attention maps during PixArt inference. Provides
+custom attention processors and visualization utilities for analyzing attention patterns.
+
+Features:
+- Custom Attention Processors:
+  * AttnProcessor2_0_Store() - Custom processor that stores attention maps
+  * scaled_dot_product_attention(query, key, value, attn_mask=None, ...) -> (output, attn_weight)
+
+- Attention Capture:
+  * PixArtAttentionVisualizer_Store(pipe) - Main visualizer class with hook management
+  * setup_hooks() - Install hooks on all transformer blocks
+  * cleanup_hooks() - Remove all hooks
+  * clear_activation() - Clear stored attention maps
+
+- Hook Management:
+  * hook_transformer_attention(module, module_id) - Hook both self and cross attention
+  * hook_forger(key) - Create hook function for specific attention module
+
+- Model Modification:
+  * replace_attn_processor(transformer) - Replace all attention processors with storage versions
+
+Author: Binxu
+"""
+
 import math
 import torch
 from typing import Optional

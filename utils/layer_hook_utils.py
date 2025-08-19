@@ -1,4 +1,31 @@
 
+"""
+Layer Hook Utilities for PyTorch Models
+
+Advanced utilities for registering hooks in PyTorch models to extract activations,
+layer names, and module information. Useful for model introspection and feature extraction.
+
+Features:
+- Module Navigation:
+  * get_module_names(model, input_size, device="cpu", show=True) -> dict
+  * get_module_name_shapes(model, inputs_list, hook_root_module=None, ...) -> dict
+  * recursive_print(module, prefix="", depth=0, deepest=3)
+
+- Hook Registration:
+  * register_hook_by_module_names(target_name, target_hook, model, input_size=(3,256,256), ...)
+  * recursive_named_apply(model, name, func, prefix=None)
+  * recursive_named_apply_w_depth(model, name, func, prefix=None, depth=0, deepest=3)
+
+- Layer Analysis:
+  * get_layer_names(model) -> list[str] [Legacy function for classic CNNs]
+  * print_specific_layer(module_subset, module_names, module_types, module_spec)
+
+- Predefined Layer Names:
+  * layername_dict - Dictionary with readable names for classic CNN architectures
+
+Author: Binxu
+"""
+
 import torch
 import torch.nn as nn
 from torch.utils.hooks import RemovableHandle

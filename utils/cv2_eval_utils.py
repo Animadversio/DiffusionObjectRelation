@@ -1,3 +1,33 @@
+"""
+OpenCV-based Evaluation Utilities for Shape Detection and Spatial Relationships
+
+Tools for object detection, classification, and evaluation using OpenCV. Includes utilities
+for extracting object masks, classifying shapes/colors, and evaluating spatial relationships
+in generated images.
+
+Features:
+- Object Detection:
+  * find_classify_objects(image, area_threshold=100, radius=16.0) -> list[dict]
+  * find_classify_object_masks(image, area_threshold=100, radius=16.0) -> list[dict]
+
+- Spatial Relationship Evaluation:
+  * identity_spatial_relation(x1, y1, x2, y2, threshold=5) -> str
+  * evaluate_spatial_relation_loose_row(dx, dy, relation_str, threshold=8) -> bool
+  * evaluate_parametric_relation(df, scene_info, color_margin=25, spatial_threshold=5) -> dict
+
+- Color Analysis:
+  * color_score(detected_rgb, target_rgb) -> float
+  * evaluate_alignment(prompt, df, color_map=COLOR_NAME_TO_RGB) -> dict
+
+- Evaluation Factory:
+  * eval_func_factory(prompt_name) -> callable
+
+- Pipeline Evaluation:
+  * evaluate_pipeline_on_prompts(pipeline, prompts, scene_infos, num_images=49, ...) -> (eval_df, object_df)
+
+Author: Binxu
+"""
+
 import cv2
 import pandas as pd
 import numpy as np

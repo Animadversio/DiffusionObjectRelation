@@ -1,3 +1,23 @@
+"""
+Text Encoder Control Library
+
+Custom text encoder classes (random embedding, positional encoding) and utilities
+for saving and managing prompt embeddings, primarily for use with T5 and similar models.
+
+Features:
+- Custom Text Encoders:
+  * RandomEmbeddingEncoder(embedding_dict=None, input_ids2dict_ids=None, dict_ids2input_ids=None) - Random embedding encoder
+  * RandomEmbeddingPosEncoder(...) - Random embedding with positional encoding support
+
+- Positional Encoding:
+  * get_positional_encodings(seq_len, d_model, device='cpu') -> torch.Tensor
+
+- Embedding Management:
+  * save_prompt_embeddings_randemb(tokenizer, text_encoder, validation_prompts, prompt_cache_dir, ...)
+
+Author: Binxu
+"""
+
 import torch.nn as nn
 import torch as th
 from os.path import join
