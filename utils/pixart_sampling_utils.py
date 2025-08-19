@@ -270,6 +270,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         inference_step_star: Optional[int] = None,
         post_prompt_attention_mask: Optional[torch.Tensor] = None,
         prompt_dtype = None,
+        verbose: bool = False,
         **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         """
@@ -472,8 +473,9 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
 
         # Original print statements referred to prompt_embeds and prompt_attention_mask
         # after potential concatenation for CFG.
-        print(prompt_embeds.shape)
-        print(prompt_attention_mask.shape)
+        if verbose:
+            print(prompt_embeds.shape)
+            print(prompt_attention_mask.shape)
         # 4. Prepare timesteps
         timesteps, num_inference_steps = retrieve_timesteps(
             self.scheduler, num_inference_steps, device, timesteps, sigmas
@@ -711,6 +713,23 @@ def pipeline_inference_custom(pipeline, prompt, negative_prompt="", num_inferenc
     images = pipeline.image_processor.postprocess(images, output_type="pil")
     image_logs.append({"validation_prompt": prompt, "images": images})
     return image_logs, pred_traj, latents_traj, t_traj
+
+
+@torch.inference_mode()
+def latent_to_pil(latents, pipeline, weight_dtype=torch.float16):
+    """Convert latent tensors to PIL images using PixArt pipeline.
+    
+    Args:
+        latents: Tensor of latent representations (shape: [B, C, H, W])
+        pipeline: PixArt pipeline with VAE and image processor
+        weight_dtype: Data type for VAE decoding (default: torch.float16)
+        
+    Returns:
+        List of PIL Images
+    """
+    image = pipeline.vae.decode(latents.to(weight_dtype) / pipeline.vae.config.scaling_factor, return_dict=False)[0]
+    image = pipeline.image_processor.postprocess(image, output_type="pil")
+    return image
 
 
 
