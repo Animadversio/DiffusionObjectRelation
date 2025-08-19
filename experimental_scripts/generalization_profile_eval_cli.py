@@ -15,8 +15,9 @@ from os.path import join
 import torch
 import pandas as pd
 import numpy as np
+import pickle as pkl
 from tqdm.auto import tqdm
-import hashlib
+import time
 from contextlib import redirect_stdout
 from itertools import product
 
@@ -68,7 +69,8 @@ def parse_args():
                             "{color1} {shape1} is {rel_text} {color2} {shape2}",
                             "{color1} {shape1} {rel_text} {color2} {shape2}",
                             "{color1} {shape1} {rel_text} the {color2} {shape2}",
-                            "the {color1} {shape1} {rel_text} the {color2} {shape2}"
+                            "{color1} {shape1} is {rel_text} the {color2} {shape2}",
+                            "the {color1} {shape1} is {rel_text} the {color2} {shape2}",
                         ],
                         help='Prompt templates to evaluate')
     
@@ -462,11 +464,8 @@ def evaluate_checkpoint_with_cache(pipeline, checkpoint_path, prompt_collections
     
     # Load checkpoint weights
     ckpt = torch.load(checkpoint_path, weights_only=False)
-    if use_ema:
-        pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict_ema']))
-    else:
-        pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict']))
-    
+    pipeline.transformer.load_state_dict(state_dict_convert(
+        ckpt['state_dict_ema'] if use_ema else ckpt['state_dict']))
     pipeline.set_progress_bar_config(disable=True)
     
     all_results = []
@@ -492,6 +491,7 @@ def evaluate_checkpoint_with_cache(pipeline, checkpoint_path, prompt_collections
             # Add checkpoint and template information to results
             eval_df['checkpoint'] = ckpt_name
             eval_df['step_num'] = step_num
+            eval_df['ema'] = use_ema
             eval_df['template'] = template_name
             template_results = eval_df  # Put in list format for consistency
             
@@ -505,34 +505,28 @@ def evaluate_checkpoint_with_cache(pipeline, checkpoint_path, prompt_collections
         
         # Save template results
         template_df = eval_df # pd.concat(template_results, ignore_index=True)
-        template_file = f"eval_df_{ckpt_name}_{template_name.replace(' ', '_')}.csv"
+        template_file = f"eval_df_{ckpt_name}{'_ema' if use_ema else '_model'}_{template_name.replace(' ', '_')}.csv"
         template_df.to_csv(join(eval_dir, template_file), index=False)
-        template_object_file = f"object_df_{ckpt_name}_{template_name.replace(' ', '_')}.pkl"
+        
+        template_object_file = f"object_df_{ckpt_name}{'_ema' if use_ema else '_model'}_{template_name.replace(' ', '_')}.pkl"
         object_df.to_pickle(join(eval_dir, template_object_file))
-
         all_results.append(template_df)
         all_obj_results.append(object_df)
     
     # Save combined results for this checkpoint
     checkpoint_df = pd.concat(all_results, ignore_index=True)
-    checkpoint_file = f"eval_df_{ckpt_name}_all_templates.csv"
-    checkpoint_df.to_csv(join(eval_dir, checkpoint_file), index=False)
-    checkpoint_object_file = f"object_df_{ckpt_name}_all_templates.pkl"
+    checkpoint_filename = f"eval_df_{ckpt_name}{'_ema' if use_ema else '_model'}_all_templates.csv"
+    checkpoint_df.to_csv(join(eval_dir, checkpoint_filename), index=False)
+    checkpoint_object_filename = f"object_df_{ckpt_name}{'_ema' if use_ema else '_model'}_all_templates.pkl"
     checkpoint_object_df = pd.concat(all_obj_results, ignore_index=True)
-    checkpoint_object_df.to_pickle(join(eval_dir, checkpoint_object_file))
-    
-    # # Print summary
-    # if not checkpoint_df.empty:
-    #     print(f"  Checkpoint {ckpt_name} summary by template:")
-    #     summary_by_template = checkpoint_df.groupby('template').select_dtypes(include=['number', 'bool']).mean()
-    #     print(summary_by_template)
+    checkpoint_object_df.to_pickle(join(eval_dir, checkpoint_object_filename))
     
     return checkpoint_df, checkpoint_object_df
 
 
 if __name__ == "__main__":
     args = parse_args()
-    
+    start_time = time.time()
     # Auto-determine text encoder type if not specified
     text_encoder_type = args.text_encoder_type or get_text_encoder_type(args.model_run_name)
     if not text_encoder_type:
@@ -581,6 +575,7 @@ if __name__ == "__main__":
             )
         
         prompt_collections[template_name] = (prompts, scene_infos)
+        pkl.dump((prompts, scene_infos), open(join(eval_dir, f"prompt_collections_{template_name}.pkl"), "wb"))
         print(f"  Template '{template}': {len(prompts)} prompts")
     
     # Step 3: Pre-compute embeddings
@@ -624,12 +619,12 @@ if __name__ == "__main__":
         try:
             checkpoint_df, checkpoint_object_df = evaluate_checkpoint_with_cache(
                 pipeline, checkpoint_path, prompt_collections, 
-                embedding_cache, args, eval_dir
+                embedding_cache, args, eval_dir, use_ema=True
             )
             all_checkpoint_results.append(checkpoint_df)
 
             print(f"Checkpoint summary: {checkpoint_path}")
-            summary_by_template = checkpoint_df.groupby('template').select_dtypes(include=['number', 'bool']).mean()
+            summary_by_template = checkpoint_df.groupby('template')[['overall', 'shape', 'color', 'unique_binding', 'spatial_relationship', 'spatial_relationship_loose', 'Dx', 'Dy']].mean()
             print(summary_by_template)
         except Exception as e:
             print(f"Error evaluating checkpoint {checkpoint_path}: {e}")
@@ -648,6 +643,7 @@ if __name__ == "__main__":
             'overall': 'mean',
             'shape': 'mean', 
             'color': 'mean',
+            'unique_binding': 'mean',
             'spatial_relationship': 'mean',
             'spatial_relationship_loose': 'mean',
             'Dx': 'mean',
@@ -665,3 +661,4 @@ if __name__ == "__main__":
                 print(f"  {metric}: {mean_val:.3f}")
     
     print("\nDone!")
+    print(f"Total time: {time.time() - start_time:.2f} seconds")
