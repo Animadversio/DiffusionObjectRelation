@@ -617,15 +617,26 @@ if __name__ == "__main__":
     all_checkpoint_results = []
     for checkpoint_path in checkpoint_paths:
         try:
-            checkpoint_df, checkpoint_object_df = evaluate_checkpoint_with_cache(
+            # evaluate with EMA on
+            ema_checkpoint_df, ema_checkpoint_object_df = evaluate_checkpoint_with_cache(
                 pipeline, checkpoint_path, prompt_collections, 
                 embedding_cache, args, eval_dir, use_ema=True
             )
+            all_checkpoint_results.append(ema_checkpoint_df)
+            print(f"Checkpoint summary: {checkpoint_path} EMA")
+            summary_by_template = ema_checkpoint_df.groupby('template')[['overall', 'shape', 'color', 'unique_binding', 'spatial_relationship', 'spatial_relationship_loose', 'Dx', 'Dy']].mean()
+            print(summary_by_template)
+            
+            # evaluate with EMA off
+            checkpoint_df, checkpoint_object_df = evaluate_checkpoint_with_cache(
+                pipeline, checkpoint_path, prompt_collections, 
+                embedding_cache, args, eval_dir, use_ema=False
+            )
             all_checkpoint_results.append(checkpoint_df)
-
-            print(f"Checkpoint summary: {checkpoint_path}")
+            print(f"Checkpoint summary: {checkpoint_path} base")
             summary_by_template = checkpoint_df.groupby('template')[['overall', 'shape', 'color', 'unique_binding', 'spatial_relationship', 'spatial_relationship_loose', 'Dx', 'Dy']].mean()
             print(summary_by_template)
+            
         except Exception as e:
             print(f"Error evaluating checkpoint {checkpoint_path}: {e}")
             continue
@@ -649,16 +660,18 @@ if __name__ == "__main__":
             'Dx': 'mean',
             'Dy': 'mean'
         }).reset_index()
-        
+        print(summary_df.head())
+        print(summary_df.tail())
         summary_df.to_csv(join(eval_dir, "summary_across_checkpoints_templates.csv"), index=False)
         
         print(f"\nEvaluation complete! Results saved to: {eval_dir}")
         print(f"Total samples evaluated: {len(final_df)}")
         print("\nOverall summary:")
-        for metric in ['overall', 'shape', 'color', 'spatial_relationship']:
-            if metric in final_df.columns:
-                mean_val = final_df[metric].mean()
-                print(f"  {metric}: {mean_val:.3f}")
+        print(final_df.select_dtypes(include=['number', 'bool']).mean())
+        # for metric in ['overall', 'shape', 'color', 'unique_binding', 'spatial_relationship']:
+        #     if metric in final_df.columns:
+        #         mean_val = final_df[metric].mean()
+        #         print(f"  {metric}: {mean_val:.3f}")
     
     print("\nDone!")
     print(f"Total time: {time.time() - start_time:.2f} seconds")
