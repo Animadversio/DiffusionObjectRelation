@@ -1,6 +1,26 @@
 
+"""
+Evaluation Prompt Dataset
+
+Collection of predefined prompts for evaluating spatial relationships, color understanding,
+and shape recognition in diffusion models. Organized by complexity and type.
+
+Features:
+- Prompt Categories:
+  * PromptDataset() - Main dataset class with organized prompt collections
+  * Categories: singular, ordering, fillers, 2_colors, relational, relational_2_colors
+
+- Prompt Types:
+  * Singular: Individual words/concepts (triangle, blue, above, etc.)
+  * Ordering: Word order variations (blue triangle vs triangle blue)
+  * Fillers: Prompts with filler words for robustness testing
+  * Relational: Spatial relationships between objects
+  * 2_colors/relational_2_colors: Multi-color spatial relationship prompts
+
+Author: 
+"""
+
 import cv2_eval_utils
-import 
 
 class PromptDataset:
     def __init__(self):

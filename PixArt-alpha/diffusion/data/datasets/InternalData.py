@@ -81,6 +81,8 @@ class InternalData(Dataset):
         img = self.loader(npy_path) if self.load_vae_feat else self.loader(img_path)
         txt_info = np.load(npz_path)
         txt_fea = torch.from_numpy(txt_info['caption_feature'])     # 1xTx4096
+        if txt_fea.ndim == 2:
+            txt_fea = txt_fea.unsqueeze(0)
         attention_mask = torch.ones(1, 1, txt_fea.shape[1])     # 1x1xT
         if 'attention_mask' in txt_info.keys():
             attention_mask = torch.from_numpy(txt_info['attention_mask'])[None]

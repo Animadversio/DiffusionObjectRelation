@@ -1,3 +1,34 @@
+"""
+Synthetic Shape Dataset for Spatial Relationship Learning
+
+PyTorch Dataset for generating synthetic images of geometric shapes (triangle, circle, square)
+with spatial relationships and captions. Useful for training and evaluating diffusion models
+on spatial reasoning tasks.
+
+Features:
+- Shape Generation:
+  * ShapesDataset(num_images, resolution=64, radius=8, transform=None) - Main dataset class
+  * draw_shape_on_image(img, shape, location, color='black') - Draw shapes on canvas
+  * Supports: triangle, circle, square with configurable radius and colors
+
+- Spatial Relationships:
+  * generate_caption(shape1_idx, shape2_idx, loc1, loc2, color1=None, color2=None, ...)
+  * Spatial phrases: upper_left, upper_right, lower_left, lower_right, above, below, left, right
+  * Occlusion support: in_front, behind with overlap detection
+
+- Geometry Utils:
+  * get_shape_bounds(shape, location) -> (left, top, right, bottom)
+  * calculate_overlap_area(box1, box2) -> float
+  * check_occlusion(shape1, loc1, shape2, loc2) -> bool
+  * determine_occlusion_order(shapes_order, locations_order) -> list
+
+- Testing:
+  * test_spatial_relationships() - Test all spatial relationship generation
+  * test_specific_cases() - Test specific geometric configurations
+
+Author: Binxu
+"""
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms

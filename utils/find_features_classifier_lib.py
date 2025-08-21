@@ -1,4 +1,31 @@
 
+"""
+Feature Classification Library for Spatial and Semantic Analysis
+
+Tools for extracting features from images, generating positive/negative embeddings based on
+object masks, and training classifiers to distinguish between spatial or semantic categories.
+
+Features:
+- Spatial Feature Extraction:
+  * get_left_obj_pos_right_obj_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * get_right_obj_pos_left_obj_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * get_top_obj_pos_bottom_obj_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * get_top_obj_pos_others_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * get_bottom_obj_pos_others_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+
+- Shape Feature Extraction:
+  * get_triangle_pos_others_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * get_circle_pos_others_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * get_square_pos_others_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+
+- Color-Shape Feature Extraction:
+  * get_red_triangle_pos_others_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * get_blue_square_pos_others_neg(latent_state, obj_df, object_masks) -> (pos_emb, neg_emb)
+  * And other color-shape combinations...
+
+Author: Binxu
+"""
+
 import os
 from os.path import join
 import pickle

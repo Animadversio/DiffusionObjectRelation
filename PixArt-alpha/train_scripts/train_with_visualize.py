@@ -71,14 +71,25 @@ def visualize_prompts(pipeline, validation_prompts, prompt_cache_dir, max_length
     images = []
     latents = []
     uncond_data = torch.load(f'{prompt_cache_dir}/uncond_{max_length}token.pth', map_location='cpu')
-    uncond_prompt_embeds = uncond_data['caption_embeddings'].to(device)
-    uncond_prompt_attention_mask = uncond_data['emb_mask'].to(device)
+    if "caption_embeddings" in uncond_data:
+        uncond_prompt_embeds = uncond_data['caption_embeddings'].to(device)
+        uncond_prompt_attention_mask = uncond_data['emb_mask'].to(device)
+    elif "caption_embeds" in uncond_data:
+        uncond_prompt_embeds = uncond_data['caption_embeds'].to(device)
+        uncond_prompt_attention_mask = uncond_data['emb_mask'].to(device)
+    else:
+        raise ValueError(f"Unconditional prompt data format not supported: {uncond_data.keys()}")
     visualized_prompts = []
     for _, prompt in enumerate(validation_prompts):
         if not os.path.exists(f'{prompt_cache_dir}/{prompt}_{max_length}token.pth'):
             continue
         embed = torch.load(f'{prompt_cache_dir}/{prompt}_{max_length}token.pth', map_location='cpu')
-        caption_embs, emb_masks = embed['caption_embeddings'].to(device), embed['emb_mask'].to(device)
+        if "caption_embeddings" in embed:
+            caption_embs, emb_masks = embed['caption_embeddings'].to(device), embed['emb_mask'].to(device)
+        elif "caption_embeds" in embed:
+            caption_embs, emb_masks = embed['caption_embeds'].to(device), embed['emb_mask'].to(device)
+        else:
+            raise ValueError(f"Prompt data format not supported: {embed.keys()}")
         latents.append(pipeline(
             num_inference_steps=num_inference_steps,
             num_images_per_prompt=num_images_per_prompt,

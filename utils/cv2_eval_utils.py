@@ -1,3 +1,33 @@
+"""
+OpenCV-based Evaluation Utilities for Shape Detection and Spatial Relationships
+
+Tools for object detection, classification, and evaluation using OpenCV. Includes utilities
+for extracting object masks, classifying shapes/colors, and evaluating spatial relationships
+in generated images.
+
+Features:
+- Object Detection:
+  * find_classify_objects(image, area_threshold=100, radius=16.0) -> list[dict]
+  * find_classify_object_masks(image, area_threshold=100, radius=16.0) -> list[dict]
+
+- Spatial Relationship Evaluation:
+  * identity_spatial_relation(x1, y1, x2, y2, threshold=5) -> str
+  * evaluate_spatial_relation_loose_row(dx, dy, relation_str, threshold=8) -> bool
+  * evaluate_parametric_relation(df, scene_info, color_margin=25, spatial_threshold=5) -> dict
+
+- Color Analysis:
+  * color_score(detected_rgb, target_rgb) -> float
+  * evaluate_alignment(prompt, df, color_map=COLOR_NAME_TO_RGB) -> dict
+
+- Evaluation Factory:
+  * eval_func_factory(prompt_name) -> callable
+
+- Pipeline Evaluation:
+  * evaluate_pipeline_on_prompts(pipeline, prompts, scene_infos, num_images=49, ...) -> (eval_df, object_df)
+
+Author: Binxu
+"""
+
 import cv2
 import pandas as pd
 import numpy as np
@@ -541,6 +571,166 @@ def evaluate_alignment(prompt, df, color_map=COLOR_NAME_TO_RGB):
         'overall_score':         overall
     }
 
+
+
+def evaluate_pipeline_on_prompts(pipeline, prompts, scene_infos, 
+                                num_images=49, num_inference_steps=14, guidance_scale=4.5,
+                                max_sequence_length=20, generator_seed=42, prompt_dtype=None,
+                                color_margin=25, spatial_threshold=5, device="cuda", **kwargs):
+    """
+    Evaluate a diffusion pipeline on a collection of prompts with spatial relationship evaluation.
+    
+    This function generates images for each prompt using the pipeline and evaluates the spatial
+    relationships in the generated images using OpenCV-based object detection and classification.
+    
+    Args:
+        pipeline: Diffusion pipeline (e.g., PixArt, DiT) for image generation
+        prompts: List of text prompts to evaluate
+        scene_infos: List of scene information dictionaries for evaluation
+                    Each should have keys: shape1, shape2, color1, color2, spatial_relationship
+        num_images: Number of images to generate per prompt (default: 49)
+        num_inference_steps: Number of denoising steps (default: 14)
+        guidance_scale: Classifier-free guidance scale (default: 4.5)
+        max_sequence_length: Maximum sequence length for text encoding (default: 20)
+        generator_seed: Random seed for generation (default: 42)
+        prompt_dtype: Data type for prompt encoding (default: None)
+        color_margin: Color threshold for object classification (default: 25)
+        spatial_threshold: Spatial relationship threshold in pixels (default: 5)
+        device: Device for generation (default: "cuda")
+    
+    Returns:
+        tuple: (eval_df, object_df)
+            - eval_df: DataFrame with evaluation results for each generated image
+            - object_df: DataFrame with detected objects for each generated image
+    
+    Example:
+        >>> prompts = ["blue triangle is above red square", "red circle is left of blue triangle"]
+        >>> scene_infos = [
+        ...     {"shape1": "Triangle", "color1": "blue", "shape2": "Square", 
+        ...      "color2": "red", "spatial_relationship": "above"},
+        ...     {"shape1": "Circle", "color1": "red", "shape2": "Triangle", 
+        ...      "color2": "blue", "spatial_relationship": "left"}
+        ... ]
+        >>> eval_df, object_df = evaluate_pipeline_on_prompts(pipeline, prompts, scene_infos)
+        >>> print(f"Overall accuracy: {eval_df['overall'].mean():.3f}")
+    """
+    import torch
+    from tqdm.auto import tqdm
+    
+    if prompt_dtype is None:
+        prompt_dtype = torch.float16# if device == "cuda" else torch.float32
+    
+    eval_df_collection = []
+    object_df_collection = []
+    
+    # Validate inputs
+    if len(prompts) != len(scene_infos):
+        raise ValueError(f"Number of prompts ({len(prompts)}) must match number of scene_infos ({len(scene_infos)})")
+    
+    for prompt_id, (prompt, scene_info) in tqdm(enumerate(zip(prompts, scene_infos)), 
+                                               desc="Evaluating prompts", total=len(prompts)):
+        # Generate images for this prompt
+        try:
+            generator = torch.Generator(device=device).manual_seed(generator_seed)
+            out = pipeline(
+                prompt, 
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                max_sequence_length=max_sequence_length,
+                num_images_per_prompt=num_images,
+                generator=generator,
+                prompt_dtype=prompt_dtype,
+                **kwargs
+            )
+        except Exception as e:
+            print(f"Error generating images for prompt {prompt_id}: {e}")
+            continue
+        
+        # Evaluate each generated image
+        object_df_batch = []
+        eval_results_batch = []
+        
+        for sample_id, image_sample in enumerate(out.images):
+            try:
+                # Object detection and classification
+                classified_objects_df = find_classify_objects(image_sample)
+                classified_objects_df["sample_id"] = sample_id
+                classified_objects_df["prompt_id"] = prompt_id
+                classified_objects_df["prompt"] = prompt
+                object_df_batch.append(classified_objects_df)
+                
+                # Spatial relationship evaluation
+                eval_result = evaluate_parametric_relation(
+                    classified_objects_df, scene_info, 
+                    color_margin=color_margin, 
+                    spatial_threshold=spatial_threshold
+                )
+                eval_result["sample_id"] = sample_id
+                eval_result["prompt_id"] = prompt_id
+                eval_result["prompt"] = prompt
+                eval_results_batch.append(eval_result)
+                
+            except Exception as e:
+                print(f"Error evaluating image {sample_id} for prompt {prompt_id}: {e}")
+                continue
+        
+        # Combine results for this prompt
+        if object_df_batch:
+            object_df_prompt = pd.concat(object_df_batch, ignore_index=True)
+            object_df_collection.append(object_df_prompt)
+        
+        if eval_results_batch:
+            eval_df_prompt = pd.DataFrame(eval_results_batch)
+            eval_df_collection.append(eval_df_prompt)
+    
+    # Combine all results
+    if eval_df_collection:
+        eval_df_final = pd.concat(eval_df_collection, ignore_index=True)
+    else:
+        eval_df_final = pd.DataFrame()
+    
+    if object_df_collection:
+        object_df_final = pd.concat(object_df_collection, ignore_index=True)
+    else:
+        object_df_final = pd.DataFrame()
+    
+    return eval_df_final, object_df_final
+
+
+def print_evaluation_summary(eval_df, group_by_prompt=True):
+    """
+    Print a summary of evaluation results.
+    
+    Args:
+        eval_df: DataFrame returned from evaluate_pipeline_on_prompts
+        group_by_prompt: Whether to group results by prompt (default: True)
+    """
+    if eval_df.empty:
+        print("No evaluation results to summarize")
+        return
+    
+    numeric_cols = eval_df.select_dtypes(include=['number', 'bool']).columns
+    numeric_cols = [col for col in numeric_cols if col not in ['prompt_id', 'sample_id']]
+    
+    print("=== EVALUATION SUMMARY ===")
+    print(f"Total samples evaluated: {len(eval_df)}")
+    print(f"Number of prompts: {eval_df['prompt_id'].nunique()}")
+    
+    print("\n--- Overall Performance ---")
+    overall_stats = eval_df[numeric_cols].mean()
+    for metric, value in overall_stats.items():
+        print(f"{metric:25s}: {value:.3f}")
+    
+    if group_by_prompt and 'prompt' in eval_df.columns:
+        print("\n--- Performance by Prompt ---")
+        prompt_stats = eval_df.groupby('prompt')[numeric_cols].mean()
+        for prompt, stats in prompt_stats.iterrows():
+            print(f"\nPrompt: {prompt}")
+            for metric, value in stats.items():
+                if metric == 'overall':
+                    print(f"  {metric:23s}: {value:.3f} ⭐")
+                else:
+                    print(f"  {metric:23s}: {value:.3f}")
 
 
 #result = evaluate_alignment("red circle is to the left of blue square", df)

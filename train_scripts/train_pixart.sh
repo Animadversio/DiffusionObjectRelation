@@ -149,6 +149,37 @@ torchrun --nproc_per_node=1 \
     --loss_report_name "train_loss"
 
 
+#OFFICIAL Dataset_Generation Experiment (Single T5)
+#POC: Hannah
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_single_T5_mini.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_singleobj_T5_mini_pilot1/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+#OFFICIAL Dataset_Generation Experiment (Double T5)
+#POC: Hannah
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_double_T5_mini.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_doubleobj_T5_mini_pilot1/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+#OFFICIAL Dataset_Generation Experiment (Mixed T5).
+#POC: Hannah
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/hjkim/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_mixed_T5_mini.py  \
+    --work-dir "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_mixedobj_T5_mini_pilot1/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+
 # train conditional diffusion with random embedding, with positional embedding 
 cd ~/Github/DiffusionObjectRelation
 torchrun --nproc_per_node=1 \
