@@ -4,18 +4,22 @@ from os.path import join
 import torch
 import torch.nn.functional as F
 import numpy as np
+import pandas as pd
+from tqdm.auto import tqdm
+from itertools import product
 import matplotlib.pyplot as plt
 import json
 sys.path.append("/n/home13/xupan/sompolinsky_lab/DiffusionObjectRelation/PixArt-alpha")
 sys.path.append("/n/home13/xupan/sompolinsky_lab/DiffusionObjectRelation")
 from diffusion.utils.misc import read_config, set_random_seed, \
     init_random_seed, DebugUnderflowOverflow
-from utils.cv2_eval_utils import find_classify_objects, find_classify_object_masks, evaluate_alignment
+from utils.cv2_eval_utils import find_classify_objects, find_classify_object_masks, evaluate_alignment, evaluate_parametric_relation
 from utils.pixart_utils import construct_diffuser_pipeline_from_config, construct_pixart_transformer_from_config, state_dict_convert
 from utils.attention_map_store_utils import replace_attn_processor, AttnProcessor2_0_Store, PixArtAttentionVisualizer_Store
 from transformers import T5Tokenizer, T5EncoderModel
 from utils.custom_text_encoding_utils import save_prompt_embeddings_randemb, RandomEmbeddingEncoder, RandomEmbeddingEncoder_wPosEmb
 from utils.mask_attention_utils import get_meaningful_token_indices,mask_semantic_parts_attention, mask_all_attention, mask_padding_attention
+from utils.path_assembly_utils import load_text_encoder
 from diffusers import AutoencoderKL, Transformer2DModel, PixArtAlphaPipeline, DPMSolverMultistepScheduler
 from typing import Callable, List, Optional, Tuple, Union, Dict
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline, ImagePipelineOutput
@@ -585,36 +589,56 @@ def visualize_prompt_with_head_masking(pipeline, prompt, max_length=120, weight_
 
 
 
-def load_custom_trained_model(model_dir, t5_path, text_feat_dir, weight_dtype=torch.bfloat16):
-    """Load custom trained model (adapted for head masking pipeline)"""
+def load_custom_trained_model(model_dir, ckpt_name, t5_path, text_feat_dir, text_encoder_type, weight_dtype=torch.bfloat16):
+    """Load custom trained model (copied from text_prompt_ablation.py)"""
     # Load model checkpoint and config
-    ckpt = torch.load(join(model_dir, "checkpoints", "epoch_4000_step_160000.pth"))
+    ckpt = torch.load(join(model_dir, "checkpoints", ckpt_name))
     config = read_config(join(model_dir, 'config.py'))
     config.mixed_precision = "bf16"
     
-    # Initialize pipeline with head masking capability
+    # Initialize pipeline
     pipeline = construct_diffuser_pipeline_from_config(config, pipeline_class=PixArtAlphaPipeline_HeadMask)
     pipeline.transformer.load_state_dict(state_dict_convert(ckpt['state_dict_ema']))
     
     # Load text encoder
     tokenizer = T5Tokenizer.from_pretrained(t5_path)
-    rnd_encoding = torch.load(join(text_feat_dir, "word_embedding_dict.pt"))
-    rndpos_encoder = RandomEmbeddingEncoder_wPosEmb(rnd_encoding["embedding_dict"],
-                                                  rnd_encoding["input_ids2dict_ids"], 
-                                                  rnd_encoding["dict_ids2input_ids"],
-                                                  max_seq_len=20, embed_dim=4096,
-                                                  wpe_scale=1/6).to("cuda")
+    text_encoder = load_text_encoder(text_encoder_type, text_feat_dir, t5_path)
     
     # Set up pipeline properties
-    pipeline.text_encoder = rndpos_encoder
+    pipeline.text_encoder = text_encoder
     pipeline.text_encoder.dtype = weight_dtype
     pipeline.tokenizer = tokenizer
     pipeline = pipeline.to(dtype=weight_dtype)
     max_length = config.model_max_length
     
-    return pipeline, max_length 
+    return pipeline, max_length
 
-def generate_and_quantify_images_head(prompt_dir, pipeline, prompt, target_layer_idx=None, target_head_indices=None, 
+def generate_test_prompts_collection_and_parsed_words():
+    """Generate a collection of test prompts for object relation experiments"""
+    colors = ['red', 'blue']
+    target_shapes = ['square', 'triangle', 'circle']
+    verticals = ['above', 'below']
+    horizontals = ['to the left of', 'to the right of']
+    prompts = []
+    parsed_words = []
+    for c1, c2 in product(colors, colors):
+        if c1 == c2:      # skip same‐color pairs
+            continue
+        for shape1, shape2 in product(target_shapes, target_shapes):
+            if shape1 == shape2:
+                continue
+            for v in verticals:
+                prompts.append(f"{c1} {shape1} is {v} the {c2} {shape2}")
+                parsed_words.append({"color1": c1, "shape1": shape1, "relation": [v], "color2": c2, "shape2": shape2, "prop": ["is", "the"], "prompt": prompts[-1]})
+            for h in horizontals:
+                prompts.append(f"{c1} {shape1} is {h} the {c2} {shape2}")
+                parsed_words.append({"color1": c1, "shape1": shape1, "relation": [h.split(" ")[2]], "color2": c2, "shape2": shape2, "prop": ["is", "the", "to", "of"], "prompt": prompts[-1]})
+            for v, h in product(verticals, horizontals):
+                prompts.append(f"{c1} {shape1} is {v} and {h} the {c2} {shape2}")
+                parsed_words.append({"color1": c1, "shape1": shape1, "relation": [v, h.split(" ")[2]], "color2": c2, "shape2": shape2, "prop": ["is", "the", "to", "of", "and"], "prompt": prompts[-1]})
+    return prompts, parsed_words
+
+def generate_and_quantify_images_head(prompt_dir, pipeline, prompt, scene_info, target_layer_idx=None, target_head_indices=None, 
                    max_length=120, weight_dtype=torch.bfloat16, num_inference_steps=14, guidance_scale=4.5, 
                    num_images_per_prompt=25, device="cuda", random_seed=0, manipulated_mask_func=None, **mask_kwargs):
     """
@@ -651,7 +675,7 @@ def generate_and_quantify_images_head(prompt_dir, pipeline, prompt, target_layer
     )
     
     # Calculate scores
-    avg_scores = calculate_gen_images_scores(image_logs, prompt)
+    avg_scores = calculate_gen_images_scores(image_logs, prompt, scene_info)
     
     # Save evaluation results  
     save_cv2_eval_head(
@@ -738,13 +762,26 @@ def save_cv2_eval_head(prompt_dir, prompt, target_layer_idx, target_head_indices
     with open(filename, 'w') as f:
         json.dump(all_scores, f, indent=4)
 
-def calculate_gen_images_scores(image_logs, prompt):
-    """Calculate average scores across all images (reused from layer masking)"""
-    shape_match_scores = []
-    color_binding_scores = []
-    spatial_color_scores = []
-    spatial_shape_scores = []
+def calculate_gen_images_scores(image_logs, prompt, scene_info):
+    """Calculate average scores across all images (copied from text_prompt_ablation.py)"""
+    # shape_match_scores = []
+    # color_binding_scores = []
+    # spatial_color_scores = []
+    # spatial_shape_scores = []
     overall_scores = []
+    overall_loose_scores = []
+    shape_scores = []
+    color_scores = []
+    exist_binding_scores = []
+    unique_binding_scores = []
+    spatial_relationship_scores = []
+    spatial_relationship_loose_scores = []
+    Dx_scores = []
+    Dy_scores = []
+    x1_scores = []
+    y1_scores = []
+    x2_scores = []
+    y2_scores = []
 
     for image in image_logs['images']:
         # Get objects from image
@@ -753,44 +790,80 @@ def calculate_gen_images_scores(image_logs, prompt):
         # Check if DataFrame is empty or missing required columns
         if df.empty or not all(col in df.columns for col in ['Shape', 'Color (RGB)', 'Center (x, y)']):
             # No objects detected - assign zero scores
-            shape_match_scores.append(0)
-            color_binding_scores.append(0)
-            spatial_color_scores.append(0)
-            spatial_shape_scores.append(0)
             overall_scores.append(0)
+            overall_loose_scores.append(0)
+            shape_scores.append(0)
+            color_scores.append(0)
+            exist_binding_scores.append(0)
+            unique_binding_scores.append(0)
+            spatial_relationship_scores.append(0)
+            spatial_relationship_loose_scores.append(0)
+            Dx_scores.append(0)
+            Dy_scores.append(0)
+            x1_scores.append(0)
+            y1_scores.append(0)
+            x2_scores.append(0)
+            y2_scores.append(0)
             continue
         
         # Evaluate alignment
-        result = evaluate_alignment(prompt, df)
+        # result = evaluate_alignment(prompt, df)
         
-        # Add scores
-        shape_match_scores.append(int(result['shape_match']))
-        color_binding_scores.append(sum(int(x) for x in result['color_binding_match'].values()) / len(result['color_binding_match']))
-        spatial_color_scores.append(int(result['spatial_color_relation']))
-        spatial_shape_scores.append(int(result['spatial_shape_relation'])) 
-        overall_scores.append(result['overall_score'])
+        # # Add scores
+        # shape_match_scores.append(int(result['shape_match']))
+        # color_binding_scores.append(sum(int(x) for x in result['color_binding_match'].values()) / len(result['color_binding_match']))
+        # spatial_color_scores.append(int(result['spatial_color_relation']))
+        # spatial_shape_scores.append(int(result['spatial_shape_relation'])) 
+        # overall_scores.append(result['overall_score'])
+        
+        # New evaluate alignment
+        result = evaluate_parametric_relation(df, scene_info, color_margin=25, spatial_threshold=5)
+        
+        overall_scores.append(result['overall'])
+        overall_loose_scores.append(result['overall_loose'])
+        shape_scores.append(result['shape'])
+        color_scores.append(result['color'])
+        exist_binding_scores.append(result['exist_binding'])
+        unique_binding_scores.append(result['unique_binding'])
+        spatial_relationship_scores.append(result['spatial_relationship'])
+        spatial_relationship_loose_scores.append(result['spatial_relationship_loose'])
+        Dx_scores.append(result['Dx'])
+        Dy_scores.append(result['Dy'])
+        x1_scores.append(result['x1'])
+        y1_scores.append(result['y1'])
+        x2_scores.append(result['x2'])
+        y2_scores.append(result['y2'])
 
     # Calculate averages
     avg_scores = {
-        'shape_match': np.mean(shape_match_scores),
-        'color_binding': np.mean(color_binding_scores),
-        'spatial_color_relation': np.mean(spatial_color_scores),
-        'spatial_shape_relation': np.mean(spatial_shape_scores),
-        'overall_score': np.mean(overall_scores)
+        'shape': np.mean(shape_scores),
+        'color': np.mean(color_scores),
+        'exist_binding': np.mean(exist_binding_scores),
+        'unique_binding': np.mean(unique_binding_scores),
+        'spatial_relationship': np.mean(spatial_relationship_scores),
+        'spatial_relationship_loose': np.mean(spatial_relationship_loose_scores),
+        'Dx': np.mean(Dx_scores),
+        'Dy': np.mean(Dy_scores),
+        'x1': np.mean(x1_scores),
+        'y1': np.mean(y1_scores),
+        'x2': np.mean(x2_scores),
+        'y2': np.mean(y2_scores)
     }
     return avg_scores
 
-def test_single_prompt_head_ablation():
+def test_single_prompt_head_ablation(prompt=None, scene_info=None, save_dir=None):
     """Test function for head ablation on a single prompt - loops through heads 0-11 on layer 2"""
     
     # Default paths
-    model_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot'
+    base_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results'
+    model_run_name = 'objrel_rndembdposemb_DiT_mini_pilot'
+    ckpt_name = 'epoch_4000_step_160000.pth'
+    model_dir = join(base_dir, model_run_name)
     t5_path = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts/t5-v1_1-xxl'
     text_feat_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRel_pilot_rndembposemb/caption_feature_wmask'
-    save_dir = '/n/home13/xupan/sompolinsky_lab/object_relation/head_ablation/'
+    save_dir = save_dir
+    text_encoder_type = 'RandomEmbeddingEncoder_wPosEmb'
     
-    # Test prompt
-    prompt = "red circle is to the left of blue square"
     
     # Head ablation parameters
     target_layer_idx = 2  # Test layer 2
@@ -801,7 +874,7 @@ def test_single_prompt_head_ablation():
     parts_to_mask = ['colors', 'spatial', 'objects']  # Test each semantic part individually
     
     print("Loading model...")
-    pipeline, max_length = load_custom_trained_model(model_dir, t5_path, text_feat_dir)
+    pipeline, max_length = load_custom_trained_model(model_dir, ckpt_name, t5_path, text_feat_dir, text_encoder_type)
     
     print(f"Testing prompt: '{prompt}'")
     print(f"Testing layer: {target_layer_idx}")
@@ -821,457 +894,110 @@ def test_single_prompt_head_ablation():
     total_experiments = 1 + len(heads_to_test) * len(parts_to_mask)  # 1 baseline + head combinations
     current_experiment = 0
     
-    try:
-        # Generate baseline (no masking)
-        current_experiment += 1
-        print(f"\n[{current_experiment}/{total_experiments}] Generating baseline (no masking)")
-        
-        generate_and_quantify_images_head(
-            prompt_dir=prompt_dir,
-            pipeline=pipeline,
-            prompt=prompt,
-            target_layer_idx=None,  # No masking
-            target_head_indices=None,
-            max_length=max_length,
-            weight_dtype=torch.bfloat16,
-            num_inference_steps=14,
-            guidance_scale=4.5,
-            num_images_per_prompt=25,
-            device="cuda",
-            random_seed=42,
-            manipulated_mask_func=None
-        )
-        
-        # Test each combination of head and semantic part
-        for part_to_mask in parts_to_mask:
-            for head_idx in heads_to_test:
-                current_experiment += 1
-                print(f"[{current_experiment}/{total_experiments}] Layer {target_layer_idx}, Head {head_idx} + {part_to_mask} masking")
-                
-                generate_and_quantify_images_head(
-                    prompt_dir=prompt_dir,
-                    pipeline=pipeline,
-                    prompt=prompt,
-                    target_layer_idx=target_layer_idx,
-                    target_head_indices=[head_idx],  # Single head as list
-                    max_length=max_length,
-                    weight_dtype=torch.bfloat16,
-                    num_inference_steps=14,
-                    guidance_scale=4.5,
-                    num_images_per_prompt=25,
-                    device="cuda",
-                    random_seed=42,
-                    manipulated_mask_func=mask_func,
-                    part_to_mask=part_to_mask
-                )
-                
-                # Clear CUDA cache to prevent memory issues
-                torch.cuda.empty_cache()
-        
-        print(f"\n✅ Head ablation experiment completed successfully!")
-        print(f"Results saved to: {metrics_file}")
-        
-        # Print summary
-        if os.path.exists(metrics_file):
-            with open(metrics_file, 'r') as f:
-                results = json.load(f)
-            print(f"\nGenerated {len(results)} different conditions")
+    # Generate baseline (no masking)
+    current_experiment += 1
+    print(f"\n[{current_experiment}/{total_experiments}] Generating baseline (no masking)")
+    
+    generate_and_quantify_images_head(
+        prompt_dir=prompt_dir,
+        pipeline=pipeline,
+        prompt=prompt,
+        scene_info=scene_info,
+        target_layer_idx=None,  # No masking
+        target_head_indices=None,
+        max_length=max_length,
+        weight_dtype=torch.bfloat16,
+        num_inference_steps=14,
+        guidance_scale=4.5,
+        num_images_per_prompt=25,
+        device="cuda",
+        random_seed=42,
+        manipulated_mask_func=None
+    )
+    
+    # Test each combination of head and semantic part
+    for part_to_mask in parts_to_mask:
+        for head_idx in heads_to_test:
+            current_experiment += 1
+            print(f"[{current_experiment}/{total_experiments}] Layer {target_layer_idx}, Head {head_idx} + {part_to_mask} masking")
             
-            # Show baseline and best/worst performing conditions
-            baseline_score = results.get('baseline', {}).get('overall_score', 0)
-            print(f"Baseline overall score: {baseline_score:.3f}")
-            
-            # Find best and worst performing head conditions
-            head_results = {k: v for k, v in results.items() if k != 'baseline'}
-            if head_results:
-                best_condition = max(head_results.items(), key=lambda x: x[1]['overall_score'])
-                worst_condition = min(head_results.items(), key=lambda x: x[1]['overall_score'])
-                
-                print(f"Best performing: {best_condition[0]} (score: {best_condition[1]['overall_score']:.3f})")
-                print(f"Worst performing: {worst_condition[0]} (score: {worst_condition[1]['overall_score']:.3f})")
-                
-            # Show summary by semantic part
-            for part in parts_to_mask:
-                part_results = {k: v for k, v in head_results.items() if k.endswith(f'_{part}')}
-                if part_results:
-                    part_scores = [v['overall_score'] for v in part_results.values()]
-                    print(f"{part.title()} masking - Average score: {np.mean(part_scores):.3f} (std: {np.std(part_scores):.3f})")
-        
-        return metrics_file
-        
-    except Exception as e:
-        print(f"❌ Head ablation experiment failed with error: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
-
-def head_ablation_experiment(prompt, target_layer_idx, heads_to_test, parts_to_mask, save_dir, 
-                            model_dir=None, t5_path=None, text_feat_dir=None):
-    """
-    Run head ablation experiment on a single prompt
-    
-    Args:
-        prompt: Text prompt to test
-        target_layer_idx: Layer index to test head masking on
-        heads_to_test: List of head indices to test masking on
-        parts_to_mask: List of semantic parts to mask ('colors', 'objects', 'spatial')
-        save_dir: Directory to save results
-        model_dir: Path to model directory (optional, uses default if None)
-        t5_path: Path to T5 model (optional, uses default if None)  
-        text_feat_dir: Path to text features (optional, uses default if None)
-    """
-    
-    # Default paths
-    if model_dir is None:
-        model_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot'
-    if t5_path is None:
-        t5_path = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts/t5-v1_1-xxl'
-    if text_feat_dir is None:
-        text_feat_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRel_pilot_rndembposemb/caption_feature_wmask'
-    
-    # Load model
-    print("Loading model...")
-    pipeline, max_length = load_custom_trained_model(model_dir, t5_path, text_feat_dir)
-    
-    print(f"Testing prompt: '{prompt}'")
-    print(f"Testing layer: {target_layer_idx}")
-    print(f"Testing heads: {heads_to_test}")
-    print(f"Testing semantic parts: {parts_to_mask}")
-    
-    # Create save directory
-    prompt_dir = os.path.join(save_dir, prompt.replace(' ', '_'))
-    os.makedirs(prompt_dir, exist_ok=True)
-    
-    # Clear any existing results file to start fresh
-    metrics_file = os.path.join(prompt_dir, 'saved_metrics', 'head_masking.json')
-    if os.path.exists(metrics_file):
-        os.remove(metrics_file)
-        print("Cleared existing results file")
-    
-    total_experiments = 1 + len(heads_to_test) * len(parts_to_mask)  # 1 baseline + head combinations
-    current_experiment = 0
-    
-    try:
-        # Generate baseline (no masking)
-        current_experiment += 1
-        print(f"\n[{current_experiment}/{total_experiments}] Generating baseline (no masking)")
-        
-        generate_and_quantify_images_head(
-            prompt_dir=prompt_dir,
-            pipeline=pipeline,
-            prompt=prompt,
-            target_layer_idx=None,  # No masking
-            target_head_indices=None,
-            max_length=max_length,
-            weight_dtype=torch.bfloat16,
-            num_inference_steps=14,
-            guidance_scale=4.5,
-            num_images_per_prompt=25,
-            device="cuda",
-            random_seed=42,
-            manipulated_mask_func=None
-        )
-        
-        # Test each combination of head and semantic part
-        for part_to_mask in parts_to_mask:
-            for head_idx in heads_to_test:
-                current_experiment += 1
-                print(f"[{current_experiment}/{total_experiments}] Layer {target_layer_idx}, Head {head_idx} + {part_to_mask} masking")
-                
-                generate_and_quantify_images_head(
-                    prompt_dir=prompt_dir,
-                    pipeline=pipeline,
-                    prompt=prompt,
-                    target_layer_idx=target_layer_idx,
-                    target_head_indices=[head_idx],  # Single head as list
-                    max_length=max_length,
-                    weight_dtype=torch.bfloat16,
-                    num_inference_steps=14,
-                    guidance_scale=4.5,
-                    num_images_per_prompt=25,
-                    device="cuda",
-                    random_seed=42,
-                    manipulated_mask_func=mask_semantic_parts_attention,
-                    part_to_mask=part_to_mask
-                )
-                
-                # Clear CUDA cache to prevent memory issues
-                torch.cuda.empty_cache()
-        
-        print(f"\n✅ Head ablation experiment completed successfully!")
-        print(f"Results saved to: {metrics_file}")
-        
-        # Print summary
-        if os.path.exists(metrics_file):
-            with open(metrics_file, 'r') as f:
-                results = json.load(f)
-            print(f"\nGenerated {len(results)} different conditions")
-            
-            # Show baseline and best/worst performing conditions
-            baseline_score = results.get('baseline', {}).get('overall_score', 0)
-            print(f"Baseline overall score: {baseline_score:.3f}")
-            
-            # Find best and worst performing head conditions
-            head_results = {k: v for k, v in results.items() if k != 'baseline'}
-            if head_results:
-                best_condition = max(head_results.items(), key=lambda x: x[1]['overall_score'])
-                worst_condition = min(head_results.items(), key=lambda x: x[1]['overall_score'])
-                
-                print(f"Best performing: {best_condition[0]} (score: {best_condition[1]['overall_score']:.3f})")
-                print(f"Worst performing: {worst_condition[0]} (score: {worst_condition[1]['overall_score']:.3f})")
-        
-        return metrics_file
-        
-    except Exception as e:
-        print(f"❌ Head ablation experiment failed with error: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
-
-def test_head_masking_pipeline():
-    """
-    Test to verify both original pipeline and head masking work correctly.
-    Generates 4 sample images from each pipeline and saves comparison plots.
-    Tests the prompt: "red circle is to the left of blue square"
-    """
-    print("=== Testing Head Masking Pipeline with Image Generation ===")
-    
-    # Test parameters
-    test_prompt = "red circle is to the left of blue square"
-    target_layer_idx = 2
-    target_head_indices = [8]
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    num_samples = 4
-    
-    try:
-        # Load actual model
-        model_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/objrel_rndembdposemb_DiT_B_pilot'
-        t5_path = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts/t5-v1_1-xxl'
-        text_feat_dir = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRel_pilot_rndembposemb/caption_feature_wmask'
-   
-        print("Loading custom trained model...")
-        pipeline, max_length = load_custom_trained_model(model_dir, t5_path, text_feat_dir)
-        print("✓ Custom model loaded successfully")
-        
-        print(f"Testing prompt: '{test_prompt}'")
-        print(f"Device: {device}")
-        print(f"Generating {num_samples} samples each for original and head masking...")
-        print()
-        
-        # Test 1: Generate images with original pipeline (no masking)
-        print("Test 1: Generating images with original pipeline (no masking)")
-        try:
-            result_original, _, _, _, _ = visualize_prompt_with_head_masking(
+            generate_and_quantify_images_head(
+                prompt_dir=prompt_dir,
                 pipeline=pipeline,
-                prompt=test_prompt,
+                prompt=prompt,
+                scene_info=scene_info,
+                target_layer_idx=target_layer_idx,
+                target_head_indices=[head_idx],  # Single head as list
                 max_length=max_length,
+                weight_dtype=torch.bfloat16,
                 num_inference_steps=14,
                 guidance_scale=4.5,
-                num_images_per_prompt=num_samples,
-                device=device,
+                num_images_per_prompt=25,
+                device="cuda",
                 random_seed=42,
-                target_layer_idx=None,  # No head masking
-                target_head_indices=None,
-                manipulated_mask_func=None
+                manipulated_mask_func=mask_func,
+                part_to_mask=part_to_mask
             )
-            original_images = result_original["images"]
-            print(f"✓ Generated {len(original_images)} original images")
             
-        except Exception as e:
-            print(f"✗ Original pipeline test failed: {e}")
-            return False
+            # Clear CUDA cache to prevent memory issues
+            torch.cuda.empty_cache()
+    
+    print(f"\n✅ Head ablation experiment completed successfully!")
+    print(f"Results saved to: {metrics_file}")
         
-        # Test 2: Generate images with head masking pipeline
-        print("Test 2: Generating images with head masking pipeline")
         
-        # Test semantic masking - can test different semantic parts
-        semantic_parts_to_test = ['spatial']  # Test all semantic parts
-        
-        for part_to_mask in semantic_parts_to_test:
-            print(f"Testing {part_to_mask} masking on layer {target_layer_idx}, heads {target_head_indices}")
-            
-            try:
-                result_masked, _, _, _, _ = visualize_prompt_with_head_masking(
-                    pipeline=pipeline,
-                    prompt=test_prompt,
-                    max_length=max_length,
-                    num_inference_steps=14,
-                    guidance_scale=4.5,
-                    num_images_per_prompt=num_samples,
-                    device=device,
-                    random_seed=42,  # Same seed for comparison
-                    target_layer_idx=target_layer_idx,
-                    target_head_indices=target_head_indices,
-                    manipulated_mask_func=mask_semantic_parts_attention,
-                    part_to_mask=part_to_mask
-                )
-                current_masked_images = result_masked["images"]
-                print(f"✓ Generated {len(current_masked_images)} head-masked images with {part_to_mask} masking")
-                
-                # Use the last semantic part's results for plotting
-                if part_to_mask == semantic_parts_to_test[-1]:
-                    masked_images = current_masked_images
-                
-            except Exception as e:
-                print(f"✗ Head masking pipeline test failed for {part_to_mask}: {e}")
-                return False
-        
-        # Test 3: Create and save comparison plots
-        print("Test 3: Creating comparison plots")
-        try:
-            import matplotlib.pyplot as plt
-            from PIL import Image
-            
-            # Take only the expected number of images to plot (in case we have extras)
-            images_to_plot = min(num_samples, len(original_images), len(masked_images))
-            
-            # Create figure with subplots
-            fig, axes = plt.subplots(2, images_to_plot, figsize=(4*images_to_plot, 8))
-            fig.suptitle(f'Pipeline Comparison: "{test_prompt}" (Semantic Head Masking - {semantic_parts_to_test[-1]})', fontsize=16)
-            
-            # Plot original images (top row)
-            for i in range(images_to_plot):
-                if images_to_plot == 1:
-                    ax = axes[0] if len(axes.shape) == 1 else axes[0, i]
-                else:
-                    ax = axes[0, i]
-                ax.imshow(original_images[i])
-                ax.set_title(f'Original #{i+1}')
-                ax.axis('off')
-            
-            # Plot head-masked images (bottom row)
-            for i in range(images_to_plot):
-                if images_to_plot == 1:
-                    ax = axes[1] if len(axes.shape) == 1 else axes[1, i]
-                else:
-                    ax = axes[1, i]
-                ax.imshow(masked_images[i])
-                ax.set_title(f'{semantic_parts_to_test[-1].title()} Masked #{i+1}\n(Layer {target_layer_idx}, Head {target_head_indices})')
-                ax.axis('off')
-            
-            plt.tight_layout()
-            
-            # Save the comparison plot
-            save_path = "semantic_head_masking_comparison.png"
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
-            print(f"✓ Comparison plot saved to: {save_path}")
-            
-            # Also save individual plots
-            # Original images plot
-            fig_orig, axes_orig = plt.subplots(1, images_to_plot, figsize=(4*images_to_plot, 4))
-            fig_orig.suptitle(f'Original Pipeline: "{test_prompt}"', fontsize=14)
-            for i in range(images_to_plot):
-                if images_to_plot == 1:
-                    ax = axes_orig if not hasattr(axes_orig, '__len__') else axes_orig[i]
-                else:
-                    ax = axes_orig[i]
-                ax.imshow(original_images[i])
-                ax.set_title(f'Sample #{i+1}')
-                ax.axis('off')
-            plt.tight_layout()
-            orig_save_path = "original_pipeline_samples.png"
-            plt.savefig(orig_save_path, dpi=150, bbox_inches='tight')
-            print(f"✓ Original pipeline plot saved to: {orig_save_path}")
-            
-            # Head masking images plot
-            fig_mask, axes_mask = plt.subplots(1, images_to_plot, figsize=(4*images_to_plot, 4))
-            fig_mask.suptitle(f'Semantic Head Masking ({semantic_parts_to_test[-1].title()}): "{test_prompt}"\n(Layer {target_layer_idx}, Head {target_head_indices})', fontsize=14)
-            for i in range(images_to_plot):
-                if images_to_plot == 1:
-                    ax = axes_mask if not hasattr(axes_mask, '__len__') else axes_mask[i]
-                else:
-                    ax = axes_mask[i]
-                ax.imshow(masked_images[i])
-                ax.set_title(f'Sample #{i+1}')
-                ax.axis('off')
-            plt.tight_layout()
-            mask_save_path = "semantic_head_masking_pipeline_samples.png"
-            plt.savefig(mask_save_path, dpi=150, bbox_inches='tight')
-            print(f"✓ Semantic head masking pipeline plot saved to: {mask_save_path}")
-            
-            plt.close('all')  # Close all figures to free memory
-            
-        except Exception as e:
-            print(f"✗ Plotting failed: {e}")
-            return False
-        
-        print()
-        print("=== All Tests Passed! ===")
-        print("The semantic head masking pipeline is working correctly.")
-        print(f"Tested semantic parts: {semantic_parts_to_test}")
-        print(f"Generated and saved comparison plots for prompt: '{test_prompt}' (showing {semantic_parts_to_test[-1]} masking)")
-        print("Files saved:")
-        print("  - semantic_head_masking_comparison.png (side-by-side comparison)")
-        print("  - original_pipeline_samples.png (original pipeline only)")
-        print("  - semantic_head_masking_pipeline_samples.png (head masking only)")
-        
-        return True
-        
-    except Exception as e:
-        print(f"✗ Overall test failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
 
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description='Run head ablation experiments')
-    parser.add_argument('--test', action='store_true', help='Run quick test with default settings')
-    parser.add_argument('--ablation', action='store_true', help='Run head ablation experiment')
-    parser.add_argument('--prompt', type=str, default="red circle is to the left of blue square", 
-                       help='Text prompt to test')
-    parser.add_argument('--layer', type=int, default=2, 
-                       help='Layer index to test head masking on')
-    parser.add_argument('--heads', type=str, default="0-11", 
-                       help='Head indices to test (e.g., "0-11" for all heads, "5,10,15" for specific heads)')
-    parser.add_argument('--parts', type=str, default="colors,spatial,objects", 
-                       help='Semantic parts to mask (comma-separated)')
-    parser.add_argument('--save_dir', type=str, default='/n/home13/xupan/sompolinsky_lab/object_relation/head_ablation/',
+    parser = argparse.ArgumentParser(description='Run layer ablation experiments')
+    #parser.add_argument('--test', action='store_true', help='Run quick test with default settings')
+   # parser.add_argument('--prompt', type=str, default="red circle is to the left of blue square", 
+                       #help='Text prompt to test (for single prompt testing)')
+    parser.add_argument('--save_dir', type=str, default='/n/home13/xupan/sompolinsky_lab/object_relation/head_ablation/rndposemb_mini/layer_2/',
                        help='Directory to save results')
     
     args = parser.parse_args()
     
-    if args.test:
-        # Run the quick test function
-        test_head_masking_pipeline()
-    elif args.ablation:
-        # Parse head indices
-        if '-' in args.heads:
-            start, end = map(int, args.heads.split('-'))
-            heads_to_test = list(range(start, end + 1))
-        else:
-            heads_to_test = [int(x.strip()) for x in args.heads.split(',')]
-        
-        # Parse semantic parts
-        parts_to_mask = [x.strip() for x in args.parts.split(',')]
-        
-        print(f"Running head ablation experiment:")
-        print(f"  Prompt: {args.prompt}")
-        print(f"  Layer: {args.layer}")
-        print(f"  Heads: {heads_to_test}")
-        print(f"  Parts: {parts_to_mask}")
-        print(f"  Save dir: {args.save_dir}")
-        
-        # Run the experiment
-        result_file = head_ablation_experiment(
-            prompt=args.prompt,
-            target_layer_idx=args.layer,
-            heads_to_test=heads_to_test,
-            parts_to_mask=parts_to_mask,
-            save_dir=args.save_dir
-        )
-        
-        if result_file:
-            print(f"\n✅ Experiment completed! Results saved to: {result_file}")
-        else:
-            print("\n❌ Experiment failed!")
-    else:
-        # Default: run the single prompt head ablation test
-        test_single_prompt_head_ablation()
+    mapping2spatial_relationship = {
+    "above": "above",
+    "below": "below",
+    "left": "left",
+    "right": "right",
+    "above_left": "upper_left",
+    "above_right": "upper_right",
+    "below_left": "lower_left",
+    "below_right": "lower_right"
+}
+
+    # Generate test prompts
+    print("Generating test prompts...")
+    prompts, parsed_words = generate_test_prompts_collection_and_parsed_words()
+    print(f"Generated {len(prompts)} test prompts")
+    prompt_df = pd.DataFrame(parsed_words)
+    prompt_df["relation_str"] = prompt_df["relation"].apply(lambda x: "_".join(x))
+    print(f"Running layer ablation experiments:")
+    print(f"  Total prompts: {len(prompts)}")
+    print(f"  Save dir: {args.save_dir}")
     
-    # Example usage:
-    # python head_attention_masking.py --test  # Quick test
-    # python head_attention_masking.py --ablation --prompt "red circle is to the left of blue square" --layer 2 --heads "0-11" --parts "spatial"
-    # python head_attention_masking.py --ablation --heads "5,8,10" --parts "colors,objects" --layer 3
-    # python head_attention_masking.py  # Default head ablation test (heads 0-11 on layer 2) 
+    # Loop through each prompt
+    for prompt_id, row in tqdm(prompt_df.iterrows()):
+        prompt = row["prompt"]
+        scene_info = {
+                "color1": row["color1"],
+                "shape1": row["shape1"],
+                "color2": row["color2"],
+                "shape2": row["shape2"],
+                "spatial_relationship": mapping2spatial_relationship[row["relation_str"]]
+            }
+        print(f"\n{'='*60}")
+        print(f"Processing prompt {prompt_id + 1}/{len(prompt_df)}: '{prompt}'")
+        print(f"{'='*60}")
+        
+        test_single_prompt_head_ablation(prompt=prompt, scene_info=scene_info, save_dir=args.save_dir)
+            
+    print(f"\n{'='*60}")
+    print(f"✅ All layer ablation experiments completed!")
+    print(f"Processed {len(prompts)} prompts")
+    print(f"Results saved to: {args.save_dir}")
+    print(f"{'='*60}")
