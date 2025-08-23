@@ -13,7 +13,7 @@ analysis_script/latents.sh
 analysis_script/latents_avg.sh
 T2I-CompBench-main/UniDet_eval/2D_spatial_eval.sh
 PixArt-alpha/notebooks/inference.sh
-
+Figures/*
 **/wandb/*
 sae_lens/checkpoints/*
 
