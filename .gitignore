@@ -31,3 +31,4 @@ cluster_logs/*
 **/classifier_prep_latents/*
 **/imgs_temp/*
 **/saved_metrics/*
+**/plots/*
