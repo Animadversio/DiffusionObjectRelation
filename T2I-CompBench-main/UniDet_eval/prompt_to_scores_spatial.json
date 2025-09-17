@@ -1,0 +1,466 @@
+{
+  "summary": {
+    "n_prompts_detection": 76,
+    "detection_mean": 0.6486842105263159,
+    "detection_sem": 0.029676230730335523,
+    "n_prompts_spatial": 76,
+    "spatial_mean": 0.17003405787980008,
+    "spatial_sem": 0.034358101612482206
+  },
+  "a airplane on the right of a turtle": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a bag on the left of a bee": {
+    "avg_detection_score_across_seeds": 0.25,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a balloon on the top of a bird": {
+    "avg_detection_score_across_seeds": 0.55,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.1,
+    "n_seeds_spatial": 10
+  },
+  "a bicycle on the right of a person": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a bird on the bottom of a train": {
+    "avg_detection_score_across_seeds": 0.85,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.06966828498668201,
+    "n_seeds_spatial": 10
+  },
+  "a bird on the left of a book": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a bird on the left of a microwave": {
+    "avg_detection_score_across_seeds": 0.65,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.19702881948268428,
+    "n_seeds_spatial": 10
+  },
+  "a bird on the right of a microwave": {
+    "avg_detection_score_across_seeds": 0.65,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.032260924487503756,
+    "n_seeds_spatial": 10
+  },
+  "a book on the right of a cow": {
+    "avg_detection_score_across_seeds": 0.15,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a boy near a pig": {
+    "avg_detection_score_across_seeds": 1.0,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 1.0,
+    "n_seeds_spatial": 10
+  },
+  "a boy next to a couch": {
+    "avg_detection_score_across_seeds": 1.0,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 1.0,
+    "n_seeds_spatial": 10
+  },
+  "a candle on the bottom of a cow": {
+    "avg_detection_score_across_seeds": 0.35,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a cat next to a cup": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.9,
+    "n_seeds_spatial": 10
+  },
+  "a cat next to a suitcase": {
+    "avg_detection_score_across_seeds": 1.0,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 1.0,
+    "n_seeds_spatial": 10
+  },
+  "a chicken near a book": {
+    "avg_detection_score_across_seeds": 1.0,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 1.0,
+    "n_seeds_spatial": 10
+  },
+  "a chicken near a phone": {
+    "avg_detection_score_across_seeds": 0.45,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a computer on the bottom of a horse": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a cow on the bottom of a computer": {
+    "avg_detection_score_across_seeds": 0.0,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a cup on the left of a cat": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a cup on the right of a bee": {
+    "avg_detection_score_across_seeds": 0.3,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a dog near a couch": {
+    "avg_detection_score_across_seeds": 1.0,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 1.0,
+    "n_seeds_spatial": 10
+  },
+  "a dog on side of a car": {
+    "avg_detection_score_across_seeds": 0.85,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.7,
+    "n_seeds_spatial": 10
+  },
+  "a dog on the left of a sofa": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a dog on the right of a couch": {
+    "avg_detection_score_across_seeds": 1.0,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.04815041225442094,
+    "n_seeds_spatial": 10
+  },
+  "a fish on the bottom of a train": {
+    "avg_detection_score_across_seeds": 0.45,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a frog on the bottom of a train": {
+    "avg_detection_score_across_seeds": 0.65,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.106272907205667,
+    "n_seeds_spatial": 10
+  },
+  "a frog on the right of a car": {
+    "avg_detection_score_across_seeds": 0.55,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.015913469821907757,
+    "n_seeds_spatial": 10
+  },
+  "a giraffe on the left of a backpack": {
+    "avg_detection_score_across_seeds": 0.7,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a giraffe on the left of a train": {
+    "avg_detection_score_across_seeds": 0.85,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.020033511352247145,
+    "n_seeds_spatial": 10
+  },
+  "a girl on the left of a giraffe": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.22675177560690854,
+    "n_seeds_spatial": 10
+  },
+  "a girl on the left of a painting": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a girl on the right of a microwave": {
+    "avg_detection_score_across_seeds": 0.75,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.4,
+    "n_seeds_spatial": 10
+  },
+  "a horse on the left of a lamp": {
+    "avg_detection_score_across_seeds": 0.85,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.27086411930633986,
+    "n_seeds_spatial": 10
+  },
+  "a lamp on the top of a sheep": {
+    "avg_detection_score_across_seeds": 0.8,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.4,
+    "n_seeds_spatial": 10
+  },
+  "a man on side of a candle": {
+    "avg_detection_score_across_seeds": 0.9,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.8,
+    "n_seeds_spatial": 10
+  },
+  "a man on the left of a giraffe": {
+    "avg_detection_score_across_seeds": 0.9,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.2,
+    "n_seeds_spatial": 10
+  },
+  "a microwave on the right of a bee": {
+    "avg_detection_score_across_seeds": 0.15,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a mouse next to a clock": {
+    "avg_detection_score_across_seeds": 0.4,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a mouse on the right of a backpack": {
+    "avg_detection_score_across_seeds": 0.35,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a mouse on the right of a bowl": {
+    "avg_detection_score_across_seeds": 0.45,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a mouse on the top of a bicycle": {
+    "avg_detection_score_across_seeds": 0.4,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a mouse on the top of a refrigerator": {
+    "avg_detection_score_across_seeds": 0.05,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a painting on the left of a horse": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a person on side of a bowl": {
+    "avg_detection_score_across_seeds": 0.8,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.6,
+    "n_seeds_spatial": 10
+  },
+  "a person on the left of a car": {
+    "avg_detection_score_across_seeds": 0.8,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.22130392266871776,
+    "n_seeds_spatial": 10
+  },
+  "a person on the right of a chicken": {
+    "avg_detection_score_across_seeds": 0.55,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.07837870059927013,
+    "n_seeds_spatial": 10
+  },
+  "a person on the top of a car": {
+    "avg_detection_score_across_seeds": 0.85,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.2,
+    "n_seeds_spatial": 10
+  },
+  "a person on the top of a giraffe": {
+    "avg_detection_score_across_seeds": 0.7,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a pig next to a wallet": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a pig on the top of a boy": {
+    "avg_detection_score_across_seeds": 0.8,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.020034731224080136,
+    "n_seeds_spatial": 10
+  },
+  "a pig on the top of a wallet": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a plate on the bottom of a man": {
+    "avg_detection_score_across_seeds": 0.85,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.5724364332278437,
+    "n_seeds_spatial": 10
+  },
+  "a plate on the left of a sheep": {
+    "avg_detection_score_across_seeds": 0.6,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a rabbit next to a phone": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a rabbit on the bottom of a chair": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a refrigerator on the bottom of a pig": {
+    "avg_detection_score_across_seeds": 0.75,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.04031313311497094,
+    "n_seeds_spatial": 10
+  },
+  "a sheep on the right of a man": {
+    "avg_detection_score_across_seeds": 0.6,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.1,
+    "n_seeds_spatial": 10
+  },
+  "a sofa on the left of a person": {
+    "avg_detection_score_across_seeds": 0.1,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a suitcase on the left of a turtle": {
+    "avg_detection_score_across_seeds": 0.9,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a television on the bottom of a cat": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a television on the left of a fish": {
+    "avg_detection_score_across_seeds": 0.75,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.1,
+    "n_seeds_spatial": 10
+  },
+  "a turtle near a lamp": {
+    "avg_detection_score_across_seeds": 0.75,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.6,
+    "n_seeds_spatial": 10
+  },
+  "a turtle on the bottom of a plate": {
+    "avg_detection_score_across_seeds": 0.9,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.03450819840506543,
+    "n_seeds_spatial": 10
+  },
+  "a turtle on the left of a painting": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a vase on the bottom of a person": {
+    "avg_detection_score_across_seeds": 0.6,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.020040883767935537,
+    "n_seeds_spatial": 10
+  },
+  "a vase on the right of a person": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a vase on the top of a cat": {
+    "avg_detection_score_across_seeds": 0.85,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.1282604011246454,
+    "n_seeds_spatial": 10
+  },
+  "a wallet on the bottom of a bird": {
+    "avg_detection_score_across_seeds": 0.45,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a wallet on the bottom of a chicken": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a wallet on the right of a man": {
+    "avg_detection_score_across_seeds": 0.5,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a wallet on the top of a bee": {
+    "avg_detection_score_across_seeds": 0.2,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a woman on the bottom of a bird": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.15697512413604225,
+    "n_seeds_spatial": 10
+  },
+  "a woman on the bottom of a bowl": {
+    "avg_detection_score_across_seeds": 0.75,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a woman on the bottom of a frog": {
+    "avg_detection_score_across_seeds": 0.8,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.0,
+    "n_seeds_spatial": 10
+  },
+  "a woman on the left of a horse": {
+    "avg_detection_score_across_seeds": 0.95,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.46339264609187136,
+    "n_seeds_spatial": 10
+  },
+  "a woman on the left of a microwave": {
+    "avg_detection_score_across_seeds": 0.6,
+    "n_seeds_detection": 10,
+    "avg_spatial_relationship_score_across_seeds": 0.1,
+    "n_seeds_spatial": 10
+  }
+}
