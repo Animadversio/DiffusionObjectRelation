@@ -111,7 +111,7 @@ def parse_args():
     parser.add_argument(
         "--data_path",
         type=str,
-        default="/n/home13/xupan/sompolinsky_lab/object_relation/t2ibench_imgs/",
+        default="/n/home13/xupan/sompolinsky_lab/object_relation/t2ibench_imgs_with_eos_masking/",
         help="Path to input data",
     )
     parser.add_argument(
@@ -123,7 +123,7 @@ def parse_args():
     parser.add_argument(
         "--seed",
         type=int,
-        default=8,
+        default=10,
         help="Seed number for dataset path",
     )
     args = parser.parse_args()
@@ -140,8 +140,8 @@ def main():
     data_path = args.data_path
     
     # Extract the folder name containing the seed number
-    folder_name = f"2025-05-10_custom_epochunknown_stepunknown_scale4.5_step14_size512_bs8_sampdpm-solver_seed{args.seed}"
-    save_path = f'{outpath}/labels/{folder_name}'
+    folder_name = f"2025-09-07_custom_epochunknown_stepunknown_scale4.5_step14_size512_bs8_sampdpm-solver_seed{args.seed}_MASKED"
+    save_path = f'{outpath}/labels/{folder_name}_eos'
 
     batch_size = 64
     dataset = Dataset(data_path, transform, args.seed)
@@ -179,7 +179,28 @@ def main():
 
 
                 img_path_split = test_data[k]['image_path'].split('/')
-                prompt = img_path_split[-1].split('_')[0] # get prompt from file names
+                filename_parts = img_path_split[-1].split('_')
+                
+                # New filename format: prompt_MASKED_spatial_relation_question_id.png
+                # Find where "MASKED" appears to split the filename correctly
+                masked_index = -1
+                for i, part in enumerate(filename_parts):
+                    if part == "MASKED":
+                        masked_index = i
+                        break
+                
+                if masked_index != -1:
+                    # Extract prompt (everything before "MASKED")
+                    prompt_parts = filename_parts[:masked_index]
+                    prompt = '_'.join(prompt_parts)
+                    
+                    # Extract question_id (last part before .png)
+                    question_id_part = filename_parts[-1].split('.')[0]  # Remove .png extension
+                else:
+                    # Fallback to old logic if "MASKED" not found
+                    prompt = filename_parts[0]
+                    question_id_part = filename_parts[-1].split('.')[0]
+
                 vocab_spatial = ['on side of', 'next to', 'near', 'on the left of', 'on the right of', 'on the bottom of', 'on the top of','on top of'] #locality words
 
                 locality = None
@@ -248,7 +269,7 @@ def main():
                 
                 # Initialize detailed score dictionary
                 detailed_score_dict = {
-                    'question_id': int(img_path_split[-1].split('_')[-1].split('.')[0]),
+                    'question_id': int(question_id_part),
                     'image': img_path_split[-1],
                     'prompt': prompt,
                     'locality': locality,
@@ -311,14 +332,14 @@ def main():
                 detailed_scores.append(detailed_score_dict)
 
                 image_dict = {}
-                image_dict['question_id']=int(img_path_split[-1].split('_')[-1].split('.')[0])
+                image_dict['question_id']=int(question_id_part)
                 image_dict['answer'] = score
                 result.append(image_dict)
 
                 # add mapping
                 map_dict = {}
                 map_dict['image'] = img_path_split[-1]
-                map_dict['question_id']=int(img_path_split[-1].split('_')[-1].split('.')[0])
+                map_dict['question_id']=int(question_id_part)
                 map_result.append(map_dict)
         
 
