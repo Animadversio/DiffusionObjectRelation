@@ -1,4 +1,32 @@
 
+"""
+Object Mask Utilities for Spatial and Semantic Analysis
+
+Tools for generating and manipulating object masks based on spatial relationships 
+(e.g., left/right/top/bottom object masks) and shape/color criteria. Useful for 
+segmentation and region-based analysis.
+
+Features:
+- Spatial Mask Generation:
+  * get_left_obj_pos_right_obj_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * get_right_obj_pos_left_obj_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * get_top_obj_pos_bottom_obj_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * get_top_obj_pos_others_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * get_bottom_obj_pos_others_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+
+- Shape-based Masks:
+  * get_triangle_pos_others_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * get_circle_pos_others_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * get_square_pos_others_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+
+- Color-Shape Combined Masks:
+  * get_red_triangle_pos_others_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * get_blue_square_pos_others_neg_mask(obj_df, object_masks) -> (pos_mask, neg_mask)
+  * And other color-shape combinations...
+
+Author: Binxu
+"""
+
 import os
 from os.path import join
 import pickle

@@ -1,3 +1,34 @@
+"""
+Attention Analysis Library for Diffusion Transformers
+
+Tools for analyzing attention maps from PixArt/DiT models. Provides statistical measures,
+spatial analysis, and visualization functions for attention patterns.
+
+Features:
+- Statistics: 
+  * compute_entropy_last_dim(p, dim=-1) -> Tensor
+  * average_attention_distance(attn_maps, shape=None, dist_type="L2") -> Tensor
+  * local_attention_score(attn_maps, shape=None, dist_type="L2", threshold=2.0) -> Tensor
+  * top_k_attention_score(attn_maps, k=10, dim=-1) -> Tensor
+
+- Spatial:
+  * attention_maps_to_spatial_maps(attn_maps, shape=None) -> Tensor
+  * infer_spatial_shape(token_num) -> tuple
+  * token_distance_matrix(shape=(16,16), dist_type="L2") -> Tensor
+  * attention_spatial_variance(attn_maps, shape=None) -> Tensor
+  * attention_spatial_total_variation(attn_maps, shape=None) -> Tensor
+
+- Visualization:
+  * plot_attention_layer_head_heatmaps(score_tensor, title_str, figsize=(12,8), ...)
+  * plot_single_attn_map(ax, attn_map, token_idx=None, map_shape=(16,16), ...)
+  * visualize_attn_maps(attn_maps, layer_idx, step_idx, sample_idx, head_idx, token_idx, ...)
+
+- Model utilities:
+  * toggle_fused_attn(model, fused_attn=True) -> model
+
+Author: Binxu
+"""
+
 import torch
 from typing import Optional
 

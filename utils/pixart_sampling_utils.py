@@ -1,3 +1,28 @@
+"""
+PixArt Sampling and Visualization Utilities
+
+Tools for sampling and visualizing images from PixArt pipelines, including prompt embedding,
+latent trajectory visualization, and custom pipeline classes for advanced inference.
+
+Features:
+- Image Generation:
+  * visualize_prompts(pipeline, validation_prompts, prompt_cache_dir, max_length=120, ...) -> image_logs
+  * pipeline_inference_custom(pipeline, prompt, negative_prompt="", num_inference_steps=14, ...)
+
+- Trajectory Sampling:
+  * visualize_prompts_with_traj(pipeline, validation_prompts, prompt_cache_dir, ...) -> (logs, latents_traj, pred_traj, t_traj)
+  * visualize_prompts_with_traj_pretrained(pipeline, validation_prompts, ...) -> trajectory data
+  * visualize_prompts_with_traj_from_embed_dict(pipeline, uncond_dict, cond_dict, ...) -> trajectory data
+
+- Embedding Management:
+  * load_embed_and_mask(validation_prompts, prompt_cache_dir, max_length=120, device="cuda") -> embed_infos
+
+- Latent Conversion:
+  * latent_to_pil(latents, pipeline, weight_dtype=torch.float16) -> list[PIL.Image]
+
+Author: Binxu
+"""
+
 import os
 import torch
 from diffusers import AutoencoderKL, Transformer2DModel, PixArtAlphaPipeline, DPMSolverMultistepScheduler
@@ -245,6 +270,7 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
         inference_step_star: Optional[int] = None,
         post_prompt_attention_mask: Optional[torch.Tensor] = None,
         prompt_dtype = None,
+        verbose: bool = False,
         **kwargs,
     ) -> Union[ImagePipelineOutput, Tuple]:
         """
@@ -447,8 +473,9 @@ class PixArtAlphaPipeline_custom(PixArtAlphaPipeline):
 
         # Original print statements referred to prompt_embeds and prompt_attention_mask
         # after potential concatenation for CFG.
-        print(prompt_embeds.shape)
-        print(prompt_attention_mask.shape)
+        if verbose:
+            print(prompt_embeds.shape)
+            print(prompt_attention_mask.shape)
         # 4. Prepare timesteps
         timesteps, num_inference_steps = retrieve_timesteps(
             self.scheduler, num_inference_steps, device, timesteps, sigmas
@@ -686,6 +713,23 @@ def pipeline_inference_custom(pipeline, prompt, negative_prompt="", num_inferenc
     images = pipeline.image_processor.postprocess(images, output_type="pil")
     image_logs.append({"validation_prompt": prompt, "images": images})
     return image_logs, pred_traj, latents_traj, t_traj
+
+
+@torch.inference_mode()
+def latent_to_pil(latents, pipeline, weight_dtype=torch.float16):
+    """Convert latent tensors to PIL images using PixArt pipeline.
+    
+    Args:
+        latents: Tensor of latent representations (shape: [B, C, H, W])
+        pipeline: PixArt pipeline with VAE and image processor
+        weight_dtype: Data type for VAE decoding (default: torch.float16)
+        
+    Returns:
+        List of PIL Images
+    """
+    image = pipeline.vae.decode(latents.to(weight_dtype) / pipeline.vae.config.scaling_factor, return_dict=False)[0]
+    image = pipeline.image_processor.postprocess(image, output_type="pil")
+    return image
 
 
 

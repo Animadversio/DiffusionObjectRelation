@@ -21,9 +21,9 @@ class Dataset(Dataset):
         self.seed = seed
         data_folders = glob.glob(f'{data_path}/*/')
 
-        data_images = os.path.join(data_path, f"2025-05-10_custom_epochunknown_stepunknown_scale4.5_step14_size512_bs8_sampdpm-solver_seed{seed}")
+        data_images = os.path.join(data_path, f"2025-09-07_custom_epochunknown_stepunknown_scale4.5_step14_size512_bs8_sampdpm-solver_seed{seed}_MASKED")
         data_imgs = os.listdir(data_images)
-        data_imgs.sort(key=lambda x: int(x.split("_")[1].split('.')[0]))  # sort according to file number
+        data_imgs.sort(key=lambda x: int(x.split("_")[-1].split('.')[0]))  # sort according to file number at the end
         self.data_list = [os.path.join(data_images,data) for data in data_imgs]
 
 

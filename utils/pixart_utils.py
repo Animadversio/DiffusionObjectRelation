@@ -1,3 +1,26 @@
+"""
+PixArt Model Construction and Pipeline Utils
+
+Utilities for building PixArt and DiT models from configs, state dict conversion,
+and pipeline construction for diffusion inference.
+
+Features:
+- State Dict Conversion:
+  * state_dict_convert(state_dict, num_layers=28, image_size=128, multi_scale_train=False) -> dict
+  * convert_checkpoint_to_diffusers_transformer(orig_ckpt_path, dump_path=None, model_name="DiT_XL-2", ...)
+
+- Model Construction:
+  * construct_pixart_transformer_from_config(config) -> transformer
+  * construct_diffuser_transformer_from_config(config, transformer_params=None) -> Transformer2DModel
+  * construct_diffuser_pipeline_from_config(config, pipeline_class=PixArtAlphaPipeline) -> pipeline
+
+- Model Configurations:
+  * PixArt_model_configs - Dict with model size configurations (XL, L, B, S, mini, micro, nano)
+  * config_dict - DiT model configurations for different sizes
+
+Author: Binxu
+"""
+
 import os
 import torch
 from diffusers import Transformer2DModel
@@ -405,7 +428,7 @@ def construct_diffuser_pipeline_from_config(config, pipeline_class=PixArtAlphaPi
         weight_dtype = torch.float16
     elif config.mixed_precision == "bf16": # accelerator.
         weight_dtype = torch.bfloat16
-    
+    print(f"weight_dtype: {weight_dtype}")
     pipeline = pipeline_class.from_pretrained(
         "PixArt-alpha/PixArt-XL-2-512x512",
         transformer=transformer,
