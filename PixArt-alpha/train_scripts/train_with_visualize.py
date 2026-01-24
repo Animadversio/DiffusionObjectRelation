@@ -175,7 +175,7 @@ def train():
             y = batch[1]
             y_mask = batch[2]
             data_info = batch[3]
-
+            # print(y.shape, y_mask.shape, data_info)
             # Sample a random timestep for each image
             bs = clean_images.shape[0]
             timesteps = torch.randint(0, config.train_sampling_steps, (bs,), device=clean_images.device).long()
@@ -357,8 +357,8 @@ if __name__ == '__main__':
     learn_sigma = getattr(config, 'learn_sigma', True) and pred_sigma
     model_kwargs={"window_block_indexes": config.window_block_indexes, "window_size": config.window_size,
                   "use_rel_pos": config.use_rel_pos, "lewei_scale": config.lewei_scale, 'config':config,
-                  'model_max_length': config.model_max_length}
-
+                  'model_max_length': config.model_max_length, 'caption_channels': config.caption_channels}
+    # print(f"caption_channels: {config.caption_channels}")
     # build models
     train_diffusion = IDDPM(str(config.train_sampling_steps), learn_sigma=learn_sigma, pred_sigma=pred_sigma, snr=config.snr_loss)
     model = build_model(config.model,
@@ -370,7 +370,8 @@ if __name__ == '__main__':
                         **model_kwargs).train()
     logger.info(f"{model.__class__.__name__} Model Parameters: {sum(p.numel() for p in model.parameters()):,}")
     model_ema = deepcopy(model).eval()
-
+    print(model.y_embedder)
+    print(model.y_embedder.y_embedding.shape)
     if config.do_visualize_samples:
         weight_dtype = torch.float32
         if accelerator.mixed_precision == "fp16":
@@ -392,7 +393,7 @@ if __name__ == '__main__':
                 norm_type="ada_norm_single",
                 norm_elementwise_affine=False,
                 norm_eps=1e-6,
-                caption_channels=4096,
+                caption_channels=config.caption_channels, #4096,
         )
         # state_dict = state_dict_convert(all_state_dict.pop("state_dict"))
         transformer.load_state_dict(state_dict_convert(model.state_dict()))

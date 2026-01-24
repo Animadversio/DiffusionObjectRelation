@@ -235,3 +235,22 @@ torchrun --nproc_per_node=1 \
     --report_to "tensorboard" \
     --loss_report_name "train_loss"
 
+
+# new training run if we want to use the same compute node. 
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 --master_port=29503 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/binxuwang/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_B_img128_internal_objrelation_CLIPopenai_prompt20_training_from_scratch.py \
+    --work-dir $STORE_DIR"/DL_Projects/PixArt/results/objrel_CLIPemb_DiT_B_pilot/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
+
+
+# new training run if we want to use the same compute node. 
+cd ~/Github/DiffusionObjectRelation
+torchrun --nproc_per_node=1 --master_port=29505 \
+    PixArt-alpha/train_scripts/train_with_visualize.py \
+    /n/home12/binxuwang/Github/DiffusionObjectRelation/train_scripts/train_configs/PixArt_mini_img128_internal_objrelation_CLIPopenai_prompt20_training_from_scratch.py \
+    --work-dir $STORE_DIR"/DL_Projects/PixArt/results/objrel_CLIPemb_DiT_mini_pilot/" \
+    --report_to "tensorboard" \
+    --loss_report_name "train_loss"
