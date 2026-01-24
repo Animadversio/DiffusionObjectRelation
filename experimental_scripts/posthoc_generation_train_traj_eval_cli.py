@@ -1,3 +1,8 @@
+# Add paths FIRST, before any imports that depend on them
+import sys
+sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/PixArt-alpha")
+sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
+
 # %%
 try:
     from IPython import get_ipython
@@ -25,8 +30,8 @@ from contextlib import redirect_stdout
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-import sys
-sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/PixArt-alpha")
+
+# Now import the modules that depend on the added paths
 from diffusion import IDDPM
 from diffusion.data.builder import build_dataset, build_dataloader, set_data_root
 from diffusion.model.builder import build_model
@@ -34,7 +39,6 @@ from diffusion.utils.misc import set_random_seed, read_config, init_random_seed,
 from diffusers import AutoencoderKL, Transformer2DModel, PixArtAlphaPipeline, DPMSolverMultistepScheduler
 from transformers import T5Tokenizer, T5EncoderModel
 
-sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
 from utils.pixart_sampling_utils import pipeline_inference_custom, \
     PixArtAlphaPipeline_custom
 from utils.pixart_utils import state_dict_convert
@@ -46,7 +50,19 @@ from utils.cv2_eval_utils import find_classify_objects, evaluate_parametric_rela
 from utils.attention_analysis_lib import plot_attention_layer_head_heatmaps, plot_layer_head_score_summary
 from utils.attention_analysis_lib import *
 from utils.obj_mask_utils import *
-from circuit_toolkit.plot_utils import saveallforms
+# from circuit_toolkit.plot_utils import saveallforms
+
+# Simple replacement for saveallforms
+def saveallforms(figdirs, fignm, figh=None, fmts=("png", "pdf")):
+    """Save all forms of a figure in an array of directories."""
+    if type(figdirs) is str:
+        figdirs = [figdirs]
+    if figh is None:
+        figh = plt.gcf()
+    for figdir in figdirs:
+        os.makedirs(figdir, exist_ok=True)
+        for sfx in fmts:
+            figh.savefig(join(figdir, fignm+"."+sfx), bbox_inches='tight')
 import pandas as pd
 from tqdm.auto import tqdm
 
