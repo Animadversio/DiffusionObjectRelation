@@ -201,11 +201,13 @@ parser.add_argument('--model_run_name', type=str, required=True,
                         "objrel_rndembdposemb_DiT_mini_pilot",
                         "objrel_rndemb_DiT_B_pilot",
                         "objrel_T5_DiT_B_pilot_WDecay",
-                        "objrel_T5_DiT_mini_pilot_WDecay"
+                        "objrel_T5_DiT_mini_pilot_WDecay",
+                        "objrel_CLIPemb_DiT_B_pilot",
+                        "objrel_CLIPemb_DiT_mini_pilot",
                     ],
                     help='Model run name to evaluate')
 parser.add_argument('--text_encoder_type', type=str, 
-                    choices=["T5", "RandomEmbeddingEncoder_wPosEmb", "RandomEmbeddingEncoder"],
+                    choices=["T5", "RandomEmbeddingEncoder_wPosEmb", "RandomEmbeddingEncoder", "openai_CLIP"],
                     help='Text encoder type (will be auto-determined if not specified)')
 
 args = parser.parse_args()
@@ -221,6 +223,8 @@ model_to_encoder = {
     "objrel_rndemb_DiT_B_pilot": "RandomEmbeddingEncoder",
     "objrel_T5_DiT_B_pilot_WDecay": "T5",
     "objrel_T5_DiT_mini_pilot_WDecay": "T5",
+    "objrel_CLIPemb_DiT_B_pilot": "openai_CLIP",
+    "objrel_CLIPemb_DiT_mini_pilot": "openai_CLIP",
 }
 
 model_run_name = args.model_run_name
@@ -249,6 +253,23 @@ elif text_encoder_type == "RandomEmbeddingEncoder":
                                                 emb_data["input_ids2dict_ids"], 
                                                 emb_data["dict_ids2input_ids"], 
                                                 ).to("cuda")
+elif text_encoder_type == "openai_CLIP":
+    from transformers import CLIPTextModelWithProjection, CLIPTokenizer
+    # Load SDXL's text encoder and tokenizer (text_encoder_2 and tokenizer_2)
+    text_encoder = CLIPTextModelWithProjection.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="text_encoder_2", 
+        torch_dtype=torch.float16,
+        use_safetensors=True,
+        variant="fp16",)
+    tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="tokenizer_2", 
+        torch_dtype=torch.float16,
+        use_safetensors=True,
+        variant="fp16",)
+    # text_feat_dir_old = '/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/training_datasets/objectRel_pilot_rndemb/caption_feature_wmask'
+    # emb_data = th.load(join(text_feat_dir_old, "word_embedding_dict.pt")) 
+    # text_encoder = RandomEmbeddingEncoder(emb_data["embedding_dict"], 
+    #                                             emb_data["input_ids2dict_ids"], 
+    #                                             emb_data["dict_ids2input_ids"], 
+    #                                             ).to("cuda")
 
 # %%
 savedir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/{model_run_name}"
@@ -270,7 +291,7 @@ pred_sigma = getattr(config, 'pred_sigma', True)
 learn_sigma = getattr(config, 'learn_sigma', True) and pred_sigma
 model_kwargs={"window_block_indexes": config.window_block_indexes, "window_size": config.window_size,
                 "use_rel_pos": config.use_rel_pos, "lewei_scale": config.lewei_scale, 'config':config,
-                'model_max_length': config.model_max_length}
+                'model_max_length': config.model_max_length, 'caption_channels': config.caption_channels}
 # train_diffusion = IDDPM(str(config.train_sampling_steps), learn_sigma=learn_sigma, pred_sigma=pred_sigma, snr=config.snr_loss)
 model = build_model(config.model,
                 config.grad_checkpointing,
@@ -295,7 +316,7 @@ transformer = Transformer2DModel(
         norm_type="ada_norm_single",
         norm_elementwise_affine=False,
         norm_eps=1e-6,
-        caption_channels=4096,
+        caption_channels=config.caption_channels,
 )
 # state_dict = state_dict_convert(all_state_dict.pop("state_dict"))
 transformer.load_state_dict(state_dict_convert(model.state_dict()))

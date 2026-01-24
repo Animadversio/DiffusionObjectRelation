@@ -21,6 +21,8 @@ param_list=\
 --model_run_name objrel_T5_DiT_B_pilot_WDecay 
 --model_run_name objrel_T5_DiT_mini_pilot_WDecay 
 --model_run_name objrel_rndemb_DiT_B_pilot 
+--model_run_name objrel_CLIPemb_DiT_B_pilot 
+--model_run_name objrel_CLIPemb_DiT_mini_pilot 
 '
 export param_name="$(echo "$param_list" | head -n $SLURM_ARRAY_TASK_ID | tail -1)"
 echo "$param_name"

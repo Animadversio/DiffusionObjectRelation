@@ -53,7 +53,9 @@ def parse_args():
                             "objrel_rndembdposemb_DiT_mini_pilot",
                             "objrel_rndemb_DiT_B_pilot",
                             "objrel_T5_DiT_B_pilot_WDecay",
-                            "objrel_T5_DiT_mini_pilot_WDecay"
+                            "objrel_T5_DiT_mini_pilot_WDecay",
+                            "objrel_CLIPemb_DiT_B_pilot",
+                            "objrel_CLIPemb_DiT_mini_pilot",
                         ],
                         help='Model run name to evaluate')
     
@@ -61,7 +63,7 @@ def parse_args():
                         help='Specific checkpoint files to evaluate (e.g., epoch_1500_step_60000.pth). If not specified, evaluates all available checkpoints.')
     
     parser.add_argument('--text_encoder_type', type=str,
-                        choices=["T5", "RandomEmbeddingEncoder_wPosEmb", "RandomEmbeddingEncoder"],
+                        choices=["T5", "RandomEmbeddingEncoder_wPosEmb", "RandomEmbeddingEncoder", "openai_CLIP"],
                         help='Text encoder type (auto-determined from model name if not specified)')
     
     parser.add_argument('--prompt_templates', type=str, nargs='*',
@@ -110,6 +112,8 @@ def get_text_encoder_type(model_run_name):
         "objrel_rndemb_DiT_B_pilot": "RandomEmbeddingEncoder",
         "objrel_T5_DiT_B_pilot_WDecay": "T5",
         "objrel_T5_DiT_mini_pilot_WDecay": "T5",
+        "objrel_CLIPemb_DiT_B_pilot": "openai_CLIP",
+        "objrel_CLIPemb_DiT_mini_pilot": "openai_CLIP",
     }
     return model_to_encoder.get(model_run_name)
 
@@ -191,6 +195,16 @@ def load_text_encoder(text_encoder_type):
             emb_data["embedding_dict"], 
             emb_data["input_ids2dict_ids"], 
             emb_data["dict_ids2input_ids"]).to("cuda")
+    elif text_encoder_type == "openai_CLIP":
+        from transformers import CLIPTextModelWithProjection, CLIPTokenizer
+        text_encoder = CLIPTextModelWithProjection.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="text_encoder_2", 
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+            variant="fp16",)
+        tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="tokenizer_2", 
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+            variant="fp16",)
     else:
         raise ValueError(f"Unknown text encoder type: {text_encoder_type}")
     
@@ -209,7 +223,8 @@ def create_pipeline_from_config(config, tokenizer, text_encoder, weight_dtype):
         "use_rel_pos": config.use_rel_pos, 
         "lewei_scale": config.lewei_scale, 
         'config': config,
-        'model_max_length': config.model_max_length
+        'model_max_length': config.model_max_length,
+        'caption_channels': config.caption_channels,
     }
     
     model = build_model(
@@ -237,7 +252,7 @@ def create_pipeline_from_config(config, tokenizer, text_encoder, weight_dtype):
         norm_type="ada_norm_single",
         norm_elementwise_affine=False,
         norm_eps=1e-6,
-        caption_channels=4096,
+        caption_channels=config.caption_channels,
     )
     
     transformer.load_state_dict(state_dict_convert(model.state_dict()))
