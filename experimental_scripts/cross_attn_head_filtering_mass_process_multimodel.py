@@ -130,7 +130,7 @@ def parse_args():
     parser.add_argument('--ckpt_name', type=str, required=True,
                         help='Checkpoint name (e.g., epoch_4000_step_160000.pth)')
     parser.add_argument('--text_encoder_type', type=str, required=True,
-                        choices=['T5', 'RandomEmbeddingEncoder_wPosEmb'],
+                        choices=['T5', 'RandomEmbeddingEncoder_wPosEmb', 'openai_CLIP'],
                         help='Type of text encoder to use')
     # the new default is bfloat16, float16 may cause wrong generation. 
     parser.add_argument('--T5_dtype', type=str, default='bfloat16',
@@ -201,6 +201,20 @@ elif text_encoder_type == "RandomEmbeddingEncoder_wPosEmb":
                                                 emb_data["dict_ids2input_ids"], 
                                                 max_seq_len=20, embed_dim=4096,
                                                 wpe_scale=1/6).to("cuda")
+elif text_encoder_type == "openai_CLIP":
+    T5_dtype = torch.float16
+    print(f"encoder dtype: {T5_dtype} [overriding args]")
+    from transformers import CLIPTextModelWithProjection, CLIPTokenizer
+    # Load SDXL's text encoder and tokenizer (text_encoder_2 and tokenizer_2)
+    text_encoder = CLIPTextModelWithProjection.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="text_encoder_2", 
+        torch_dtype=torch.float16,
+        use_safetensors=True,
+        variant="fp16",)
+    tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", subfolder="tokenizer_2", 
+        torch_dtype=torch.float16,
+        use_safetensors=True,
+        variant="fp16",)
+
 torch.cuda.empty_cache()
 config = read_config(join(savedir, 'config.py'))
 weight_dtype = torch.float32
@@ -215,7 +229,7 @@ pred_sigma = getattr(config, 'pred_sigma', True)
 learn_sigma = getattr(config, 'learn_sigma', True) and pred_sigma
 model_kwargs={"window_block_indexes": config.window_block_indexes, "window_size": config.window_size,
                 "use_rel_pos": config.use_rel_pos, "lewei_scale": config.lewei_scale, 'config':config,
-                'model_max_length': config.model_max_length}
+                'model_max_length': config.model_max_length, 'caption_channels': config.caption_channels}
 # train_diffusion = IDDPM(str(config.train_sampling_steps), learn_sigma=learn_sigma, pred_sigma=pred_sigma, snr=config.snr_loss)
 model = build_model(config.model,
                 config.grad_checkpointing,
@@ -240,7 +254,7 @@ transformer = Transformer2DModel(
         norm_type="ada_norm_single",
         norm_elementwise_affine=False,
         norm_eps=1e-6,
-        caption_channels=4096,
+        caption_channels=config.caption_channels,
 )
 # state_dict = state_dict_convert(all_state_dict.pop("state_dict"))
 transformer.load_state_dict(state_dict_convert(model.state_dict()))
@@ -372,7 +386,7 @@ for prompt in ['red square is above the blue triangle',
     os.makedirs(prompt_dir, exist_ok=True)
     n_samples = 49
     attnvis_store.clear_activation()
-    output = pipeline(prompt, 
+    output = pipeline([prompt], 
             num_inference_steps=14,
             max_sequence_length=20, 
             num_images_per_prompt=n_samples,
