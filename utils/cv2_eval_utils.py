@@ -733,5 +733,10 @@ def print_evaluation_summary(eval_df, group_by_prompt=True):
                     print(f"  {metric:23s}: {value:.3f}")
 
 
+def print_evaluation_summary_concise(eval_df, group_by_prompt=True, show=True):
+    print_df = eval_df.select_dtypes(include=['number', 'bool']).drop(columns=['prompt_id', 'sample_id'], errors='ignore').mean().round(3).to_frame().T
+    if show:
+        display(print_df)
+    return print_df
 #result = evaluate_alignment("red circle is to the left of blue square", df)
 #print(result)

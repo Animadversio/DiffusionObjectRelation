@@ -112,6 +112,34 @@ def generate_test_prompts_collection_and_parsed_words():
                 parsed_words.append({"color1": c1, "shape1": shape1, "relation": [v, h.split(" ")[2]], "color2": c2, "shape2": shape2, "prop": ["is", "the", "to", "of", "and"], "prompt": prompts[-1]})
     return prompts, parsed_words
 
+def generate_test_prompts_collection_and_parsed_words_no_generalization():
+    """Generate test prompts for evaluation."""
+    from itertools import product
+    
+    colors = ['red', 'blue']
+    target_shapes = ['square', 'triangle', 'circle']
+    verticals = ['above', 'below']
+    horizontals = ['to the left of', 'to the right of']
+    prompts = []
+    parsed_words = []
+    for c1, c2 in product(colors, colors):
+        if c1 == c2:      # skip same‐color pairs
+            continue
+        for shape1, shape2 in product(target_shapes, target_shapes):
+            if shape1 == shape2:
+                continue
+            for v in verticals:
+                prompts.append(f"{c1} {shape1} is {v} {c2} {shape2}")
+                parsed_words.append({"color1": c1, "shape1": shape1, "relation": [v], "color2": c2, "shape2": shape2, "prop": ["is", "the"], "prompt": prompts[-1]})
+            for h in horizontals:
+                prompts.append(f"{c1} {shape1} is {h} {c2} {shape2}")
+                parsed_words.append({"color1": c1, "shape1": shape1, "relation": [h.split(" ")[2]], "color2": c2, "shape2": shape2, "prop": ["is", "the", "to", "of"], "prompt": prompts[-1]})
+            for v, h in product(verticals, horizontals):
+                prompts.append(f"{c1} {shape1} is {v} and {h} {c2} {shape2}")
+                parsed_words.append({"color1": c1, "shape1": shape1, "relation": [v, h.split(" ")[2]], "color2": c2, "shape2": shape2, "prop": ["is", "the", "to", "of", "and"], "prompt": prompts[-1]})
+    return prompts, parsed_words
+
+
 def load_text_encoder(text_encoder_type):
     """Load text encoder based on type."""
     T5_path = "/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/output/pretrained_models/t5_ckpts/t5-v1_1-xxl"
