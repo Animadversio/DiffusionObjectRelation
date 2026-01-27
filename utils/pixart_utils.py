@@ -392,7 +392,7 @@ def construct_diffuser_transformer_from_config(config, transformer_params=None):
     learn_sigma = getattr(config, 'learn_sigma', True) and pred_sigma
     model_kwargs={"window_block_indexes": config.window_block_indexes, "window_size": config.window_size,
                     "use_rel_pos": config.use_rel_pos, "lewei_scale": config.lewei_scale, 'config':config,
-                    'model_max_length': config.model_max_length}
+                    'model_max_length': config.model_max_length, 'caption_channels': config.caption_channels}
 
     transformer = Transformer2DModel(
             sample_size=image_size // 8,
