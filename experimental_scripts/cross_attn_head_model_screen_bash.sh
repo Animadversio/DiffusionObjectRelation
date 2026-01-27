@@ -8,16 +8,18 @@ param_list=(
     # "--model_run_name objrel2_DiT_B_pilot --ckpt_name epoch_2000_step_80000.pth --text_encoder_type T5 "
     # "--model_run_name objrel_T5_DiT_B_pilot --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 "
     # "--model_run_name objrel_T5_DiT_mini_pilot --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 "
-    "--model_run_name objrel_T5_DiT_B_pilot --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 --T5_dtype bfloat16"
-    "--model_run_name objrel_T5_DiT_B_pilot_WDecay --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 --T5_dtype bfloat16"
-    "--model_run_name objrel_T5_DiT_mini_pilot_WDecay --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 --T5_dtype bfloat16"
+    # "--model_run_name objrel_T5_DiT_B_pilot --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 --T5_dtype bfloat16"
+    # "--model_run_name objrel_T5_DiT_B_pilot_WDecay --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 --T5_dtype bfloat16"
+    # "--model_run_name objrel_T5_DiT_mini_pilot_WDecay --ckpt_name epoch_4000_step_160000.pth --text_encoder_type T5 --T5_dtype bfloat16"
+    "--model_run_name objrel_CLIPemb_DiT_B_pilot --ckpt_name epoch_4000_step_160000.pth --text_encoder_type openai_CLIP --T5_dtype float16"
+    # "--model_run_name objrel_CLIPemb_DiT_mini_pilot --ckpt_name epoch_4000_step_160000.pth --text_encoder_type openai_CLIP --T5_dtype float16"
 )
 
 cd /n/home12/binxuwang/Github/DiffusionObjectRelation/experimental_scripts
 # Loop through each parameter set and run the script
 for param in "${param_list[@]}"; do
     echo "Running with parameters: $param"
-    time python cross_attn_head_filtering_mass_process_multimodel.py $param
+    time python cross_attn_head_filtering_mass_process_multimodel_cached_emb.py $param
 done
 
 
