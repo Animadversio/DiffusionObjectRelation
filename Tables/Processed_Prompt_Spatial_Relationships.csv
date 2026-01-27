@@ -1,0 +1,10 @@
+shape_1,shape_2,color_1,color_2,spatial_relationship
+circle,square,blue,blue,above and to the right of
+square,circle,blue,red,to the right of
+triangle,square,blue,red,to the upper left of
+circle,square,red,blue,to the left of
+red,red,unspecified,unspecified,to the left of
+triangle,square,unspecified,unspecified,above and to the right of
+triangle,square,unspecified,unspecified,to the left of
+triangle,triangle,unspecified,unspecified,to the left of
+triangle,square,unspecified,unspecified,to the upper left of

@@ -1,0 +1,25 @@
+prompt_id,prompt,n_images,num_objects_acc,n_num_objects_correct,n_num_relation_is_correct,relation_acc_cond_on_num_objects_correct
+0,A cat is on the left of a dog.,100,36.0,36,32,88.89
+1,A dog is on the right of a cat.,100,30.0,30,12,40.0
+2,A cat is on the right of a dog.,100,37.0,37,12,32.43
+3,A dog is on the left of a cat.,100,31.0,31,11,35.48
+4,A human is on the left of a dog.,100,43.0,43,12,27.91
+5,A dog is on the right of a human.,100,65.0,65,29,44.62
+6,A human is on the right of a dog.,100,44.0,44,11,25.0
+7,A dog is on the left of a human.,100,73.0,73,73,100.0
+8,A human is on the left of a cat.,100,27.0,27,3,11.11
+9,A cat is on the right of a human.,100,51.0,51,27,52.94
+10,A human is on the right of a cat.,100,39.0,39,8,20.51
+11,A cat is on the left of a human.,100,55.0,55,55,100.0
+12,A chair is on the left of a table.,100,65.0,65,55,84.62
+13,A table is on the right of a chair.,100,56.0,56,32,57.14
+14,A chair is on the right of a table.,100,81.0,81,52,64.2
+15,A table is on the left of a chair.,100,36.0,36,14,38.89
+16,A pen is on the left of a notebook.,100,50.0,50,16,32.0
+17,A notebook is on the right of a pen.,100,50.0,50,12,24.0
+18,A pen is on the right of a notebook.,100,41.0,41,36,87.8
+19,A notebook is on the left of a pen.,100,49.0,49,36,73.47
+20,A pizza is on the left of a salad.,100,45.0,45,40,88.89
+21,A salad is on the right of a pizza.,100,46.0,46,23,50.0
+22,A pizza is on the right of a salad.,100,43.0,43,16,37.21
+23,A salad is on the left of a pizza.,100,39.0,39,29,74.36
