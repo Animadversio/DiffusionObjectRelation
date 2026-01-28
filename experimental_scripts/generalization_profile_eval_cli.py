@@ -22,8 +22,10 @@ from contextlib import redirect_stdout
 from itertools import product
 
 # Add project paths
-sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/PixArt-alpha")
-sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
+sys.path.append("/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/PixArt-alpha")
+sys.path.append("/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation")
+#sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/PixArt-alpha")
+#sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
 
 from diffusion.model.builder import build_model
 from diffusion.utils.misc import read_config
@@ -73,6 +75,7 @@ def parse_args():
                             "{color1} {shape1} {rel_text} the {color2} {shape2}",
                             "{color1} {shape1} is {rel_text} the {color2} {shape2}",
                             "the {color1} {shape1} is {rel_text} the {color2} {shape2}",
+                            "{rel_text} {color2} {shape2} is {color1} {shape1}",
                         ],
                         help='Prompt templates to evaluate')
     
@@ -97,7 +100,27 @@ def parse_args():
     parser.add_argument('--single_prompt_mode', action='store_true',
                         help='Use single object pair prompts instead of full combinatorial (22 vs 264 prompts)')
     
+    parser.add_argument(
+        '--color_synonym_map',
+        type=str,
+        default="none",
+        choices=["none", "red_to_crimson", "blue_to_navy"],
+        help="Choose which color synonym mapping to use in prompts. "
+             "Evaluation scene_info keeps canonical colors. "
+             "Options: none | red_to_crimson | blue_to_navy"
+    )
+    
     return parser.parse_args()
+
+def get_color_synonym_map(color_synonym_map_name: str) -> dict:
+    """Return a prompt-facing color synonym map based on the selected option."""
+    if color_synonym_map_name == "none":
+        return {}
+    if color_synonym_map_name == "red_to_crimson":
+        return {"red": "crimson"}
+    if color_synonym_map_name == "blue_to_navy":
+        return {"blue": "navy"}
+    raise ValueError(f"Unknown color_synonym_map: {color_synonym_map_name}")
 
 
 def get_text_encoder_type(model_run_name):
@@ -120,15 +143,21 @@ def get_text_encoder_type(model_run_name):
 
 def generate_prompt_collection(spatial_phrases, 
                                prompt_template="{color1} {shape1} is {rel_text} {color2} {shape2}",
-                               color1="blue", shape1="circle", color2="red", shape2="square"):
+                               color1="blue", shape1="circle", color2="red", shape2="square",
+                               color_synonym_map: dict | None = None):
     """Generate prompts for single object pair (from notebook)."""
     prompt_collection = []
     scene_info_collection = []
+    color_synonym_map = color_synonym_map or {}
+    color1_prompt = color_synonym_map.get(color1, color1)
+    color2_prompt = color_synonym_map.get(color2, color2)
     for spatial_relationship, rel_text_collection in spatial_phrases.items():
         if spatial_relationship in ["in_front", "behind"]:
             continue
         for rel_text in rel_text_collection:
-            prompt = prompt_template.format(color1=color1, shape1=shape1, rel_text=rel_text, color2=color2, shape2=shape2)
+            prompt = prompt_template.format(
+                color1=color1_prompt, shape1=shape1, rel_text=rel_text, color2=color2_prompt, shape2=shape2
+            )
             scene_info = {
                 "color1": color1,
                 "shape1": shape1,
@@ -142,9 +171,11 @@ def generate_prompt_collection(spatial_phrases,
 
 
 def generate_all_prompt_collection(spatial_phrases, 
-                                   prompt_template="{color1} {shape1} is {rel_text} {color2} {shape2}"):
+                                   prompt_template="{color1} {shape1} is {rel_text} {color2} {shape2}",
+                                   color_synonym_map: dict | None = None):
     """Generate all combinatorial prompts (from notebook)."""
-    color_list = ['red', 'blue']
+    color_list = ['red', 'blue']  # canonical colors for evaluation
+    color_synonym_map = color_synonym_map or {}
     shape_list = ['square', 'triangle', 'circle']
     prompt_collection = []
     scene_info_collection = []
@@ -158,7 +189,11 @@ def generate_all_prompt_collection(spatial_phrases,
                 if spatial_relationship in ["in_front", "behind"]:
                     continue
                 for rel_text in rel_text_collection:
-                    prompt = prompt_template.format(color1=color1, shape1=shape1, rel_text=rel_text, color2=color2, shape2=shape2)
+                    color1_prompt = color_synonym_map.get(color1, color1)
+                    color2_prompt = color_synonym_map.get(color2, color2)
+                    prompt = prompt_template.format(
+                        color1=color1_prompt, shape1=shape1, rel_text=rel_text, color2=color2_prompt, shape2=shape2
+                    )
                     scene_info = {
                         "color1": color1,
                         "shape1": shape1,
@@ -551,13 +586,17 @@ if __name__ == "__main__":
     print(f"Text encoder type: {text_encoder_type}")
     print(f"Prompt templates: {len(args.prompt_templates)}")
     print(f"Single prompt mode: {args.single_prompt_mode}")
+    print(f"Color synonym map: {args.color_synonym_map}")
     
     # Setup directories
+    # savedir: for reading (config, checkpoints) - uses hardcoded path with read-only access
     savedir = f"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/PixArt/results/{args.model_run_name}"
+    # local_results_dir: for writing - uses local path within workspace
+    local_results_dir = join("/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation", "results", args.model_run_name)
     if args.output_dir:
         eval_dir = args.output_dir
     else:
-        eval_dir = join(savedir, "generalization_eval")
+        eval_dir = join(local_results_dir, "generalization_eval")
     os.makedirs(eval_dir, exist_ok=True)
     
     print(f"Output directory: {eval_dir}")
@@ -571,6 +610,7 @@ if __name__ == "__main__":
     dataset_tmp = ShapesDataset(num_images=10000)
     
     prompt_collections = {}
+    color_synonym_map = get_color_synonym_map(args.color_synonym_map)
     
     for template in args.prompt_templates:
         template_name = template.replace('{', '').replace('}', '').replace(' ', '_')
@@ -580,13 +620,15 @@ if __name__ == "__main__":
             prompts, scene_infos = generate_prompt_collection(
                 dataset_tmp.spatial_phrases,
                 prompt_template=template,
-                color1="blue", shape1="circle", color2="red", shape2="square"
+                color1="blue", shape1="circle", color2="red", shape2="square",
+                color_synonym_map=color_synonym_map,
             )
         else:
             # Full combinatorial
             prompts, scene_infos = generate_all_prompt_collection(
                 dataset_tmp.spatial_phrases,
-                prompt_template=template
+                prompt_template=template,
+                color_synonym_map=color_synonym_map,
             )
         
         prompt_collections[template_name] = (prompts, scene_infos)

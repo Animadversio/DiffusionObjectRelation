@@ -32,3 +32,4 @@ cluster_logs/*
 **/imgs_temp/*
 **/saved_metrics/*
 **/plots/*
+**/results/*
