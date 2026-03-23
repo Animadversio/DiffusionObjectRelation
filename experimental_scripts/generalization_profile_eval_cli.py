@@ -22,10 +22,10 @@ from contextlib import redirect_stdout
 from itertools import product
 
 # Add project paths
-sys.path.append("/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/PixArt-alpha")
-sys.path.append("/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation")
-#sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/PixArt-alpha")
-#sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
+# sys.path.append("/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/PixArt-alpha")
+# sys.path.append("/n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation")
+sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation/PixArt-alpha")
+sys.path.append("/n/home12/binxuwang/Github/DiffusionObjectRelation")
 
 from diffusion.model.builder import build_model
 from diffusion.utils.misc import read_config
@@ -505,7 +505,7 @@ def evaluate_pipeline_on_prompts_with_cached_embeddings(pipeline, prompts, scene
 
 
 def evaluate_checkpoint_with_cache(pipeline, checkpoint_path, prompt_collections, embedding_cache, 
-                                   args, eval_dir, use_ema=True):
+                                   args, eval_dir, use_ema=True, suffix=""):
     """Evaluate a single checkpoint using cached embeddings."""
     ckpt_name = os.path.basename(checkpoint_path)
     step_num = int(ckpt_name.split('_step_')[-1].split('.pth')[0]) if '_step_' in ckpt_name else 0
@@ -555,19 +555,19 @@ def evaluate_checkpoint_with_cache(pipeline, checkpoint_path, prompt_collections
         
         # Save template results
         template_df = eval_df # pd.concat(template_results, ignore_index=True)
-        template_file = f"eval_df_{ckpt_name}{'_ema' if use_ema else '_model'}_{template_name.replace(' ', '_')}.csv"
+        template_file = f"eval_df_{ckpt_name}{'_ema' if use_ema else '_model'}_{template_name.replace(' ', '_')}_{suffix}.csv"
         template_df.to_csv(join(eval_dir, template_file), index=False)
         
-        template_object_file = f"object_df_{ckpt_name}{'_ema' if use_ema else '_model'}_{template_name.replace(' ', '_')}.pkl"
+        template_object_file = f"object_df_{ckpt_name}{'_ema' if use_ema else '_model'}_{template_name.replace(' ', '_')}_{suffix}.pkl"
         object_df.to_pickle(join(eval_dir, template_object_file))
         all_results.append(template_df)
         all_obj_results.append(object_df)
     
     # Save combined results for this checkpoint
     checkpoint_df = pd.concat(all_results, ignore_index=True)
-    checkpoint_filename = f"eval_df_{ckpt_name}{'_ema' if use_ema else '_model'}_all_templates.csv"
+    checkpoint_filename = f"eval_df_{ckpt_name}{'_ema' if use_ema else '_model'}_all_templates_{suffix}.csv"
     checkpoint_df.to_csv(join(eval_dir, checkpoint_filename), index=False)
-    checkpoint_object_filename = f"object_df_{ckpt_name}{'_ema' if use_ema else '_model'}_all_templates.pkl"
+    checkpoint_object_filename = f"object_df_{ckpt_name}{'_ema' if use_ema else '_model'}_all_templates_{suffix}.pkl"
     checkpoint_object_df = pd.concat(all_obj_results, ignore_index=True)
     checkpoint_object_df.to_pickle(join(eval_dir, checkpoint_object_filename))
     
@@ -596,7 +596,7 @@ if __name__ == "__main__":
     if args.output_dir:
         eval_dir = args.output_dir
     else:
-        eval_dir = join(local_results_dir, "generalization_eval")
+        eval_dir = join(savedir, "generalization_eval")
     os.makedirs(eval_dir, exist_ok=True)
     
     print(f"Output directory: {eval_dir}")
@@ -610,6 +610,7 @@ if __name__ == "__main__":
     dataset_tmp = ShapesDataset(num_images=10000)
     
     prompt_collections = {}
+    color_synonym_map_str = args.color_synonym_map
     color_synonym_map = get_color_synonym_map(args.color_synonym_map)
     
     for template in args.prompt_templates:
@@ -677,7 +678,7 @@ if __name__ == "__main__":
             # evaluate with EMA on
             ema_checkpoint_df, ema_checkpoint_object_df = evaluate_checkpoint_with_cache(
                 pipeline, checkpoint_path, prompt_collections, 
-                embedding_cache, args, eval_dir, use_ema=True
+                embedding_cache, args, eval_dir, use_ema=True, suffix=color_synonym_map_str
             )
             all_checkpoint_results.append(ema_checkpoint_df)
             print(f"Checkpoint summary: {checkpoint_path} EMA")
@@ -687,7 +688,7 @@ if __name__ == "__main__":
             # evaluate with EMA off
             checkpoint_df, checkpoint_object_df = evaluate_checkpoint_with_cache(
                 pipeline, checkpoint_path, prompt_collections, 
-                embedding_cache, args, eval_dir, use_ema=False
+                embedding_cache, args, eval_dir, use_ema=False, suffix=color_synonym_map_str
             )
             all_checkpoint_results.append(checkpoint_df)
             print(f"Checkpoint summary: {checkpoint_path} base")
@@ -705,7 +706,36 @@ if __name__ == "__main__":
         print(f"\nStep 7: Generating summary...")
         # Combine all results
         final_df = pd.concat(all_checkpoint_results, ignore_index=True)
-        final_df.to_csv(join(eval_dir, "eval_df_all_checkpoints_all_templates.csv"), index=False)
+        # Create a string summarizing key options to avoid file name collision
+        import hashlib
+
+        def options_hash(args):
+            """Create a short hash string from key CLI args for disambiguation."""
+            # Use main options that affect prompt/eval for hash -- feel free to add more!
+            key_parts = [
+                # getattr(args, "model_run_name", "none"),
+                getattr(args, "color_synonym_map", "none"),
+                str(getattr(args, "prompt_templates", "none")),
+                # str(getattr(args, "single_prompt_mode", False)),
+            ]
+            import re
+            key_str = "|".join([str(p) for p in key_parts])
+            # Replace illegal filename chars with underscores
+            key_str_valid = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', key_str)
+            # make sure its not tooo long 
+            if len(key_str_valid) > 40:
+                key_str_valid = key_str_valid[:40] + "_etc"
+            key_hash = hashlib.md5(key_str.encode("utf-8")).hexdigest()[:8]
+            return f"{key_str_valid}.{key_hash}"
+
+        key_hash = options_hash(args)
+
+        main_csv_name = f"eval_df_all_checkpoints_all_templates.{key_hash}.csv"
+        summary_csv_name = f"summary_across_checkpoints_templates.{key_hash}.csv"
+        print(f"Saving results to: {join(eval_dir, main_csv_name)}")
+        print(f"Saving summary to: {join(eval_dir, summary_csv_name)}")
+        
+        final_df.to_csv(join(eval_dir, main_csv_name), index=False)
         # Create summary across checkpoints and templates
         summary_df = final_df.groupby(['checkpoint', 'template']).agg({
             'overall': 'mean',
@@ -719,7 +749,7 @@ if __name__ == "__main__":
         }).reset_index()
         print(summary_df.head())
         print(summary_df.tail())
-        summary_df.to_csv(join(eval_dir, "summary_across_checkpoints_templates.csv"), index=False)
+        summary_df.to_csv(join(eval_dir, summary_csv_name), index=False)
         
         print(f"\nEvaluation complete! Results saved to: {eval_dir}")
         print(f"Total samples evaluated: {len(final_df)}")

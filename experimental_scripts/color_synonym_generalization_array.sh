@@ -26,7 +26,7 @@ echo "PYTHON ENV: $(which python)"
 
 cd /n/netscratch/konkle_lab/Everyone/Jingxuan/DiffusionObjectRelation/experimental_scripts
 
-
+TASK_ID=1
 MODELS=(
   "objrel_T5_DiT_B_pilot"
   "objrel_rndembdposemb_DiT_B_pilot"
