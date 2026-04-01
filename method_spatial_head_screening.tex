@@ -1,0 +1,169 @@
+\subsection{Spatial-Relationship Head Screening via Weight-Space Analysis}\label{method:head_screening}
+
+The cross-attention mechanism in diffusion transformers couples text information to spatial image tokens. Each cross-attention head at layer $l$ with head index $h$ computes attention logits between spatial query tokens and text key tokens. We develop a screening procedure that identifies heads whose \emph{learned} query--key geometry implements a spatial gradient aligned with directional semantics---without generating any images.
+
+\paragraph{Cross-attention inner-product maps.}
+Consider a transformer with $L$ layers and $H$ attention heads per layer, each of dimension $d_h = d_{\mathrm{model}} / H$. At layer $l$, the cross-attention head $h$ has learned projection matrices $W_Q^{(l)} \in \mathbb{R}^{d_{\mathrm{model}} \times d_{\mathrm{model}}}$ and $W_K^{(l)} \in \mathbb{R}^{d_{\mathrm{model}} \times d_{\mathrm{model}}}$, shared across heads, from which we extract the per-head slices
+\begin{equation}
+    W_{Q,h}^{(l)} = W_Q^{(l)}[\,:\,,\; h d_h : (h{+}1)d_h\,], \qquad
+    W_{K,h}^{(l)} = W_K^{(l)}[\,:\,,\; h d_h : (h{+}1)d_h\,].
+\end{equation}
+
+The query input to cross-attention is the sum of the latent hidden state and a fixed 2D sinusoidal positional embedding. At initialization and to first order throughout training, the positional component dominates the spatial structure of the query. We therefore use the positional embedding directly as a proxy for the query input. Let $\mathbf{p}_s \in \mathbb{R}^{d_{\mathrm{model}}}$ denote the 2D sinusoidal positional embedding for spatial position $s$ on an $S \times S$ grid ($S = $ \texttt{image\_size} / \texttt{patch\_size}), and let
+\begin{equation}
+    P = \begin{bmatrix} \mathbf{p}_1^\top \\ \vdots \\ \mathbf{p}_{S^2}^\top \end{bmatrix} \in \mathbb{R}^{S^2 \times d_{\mathrm{model}}}
+\end{equation}
+be the full positional embedding matrix. The projected query vectors for head $h$ at layer $l$ are
+\begin{equation}
+    Q_h^{(l)} = P \, W_{Q,h}^{(l)} \in \mathbb{R}^{S^2 \times d_h}.
+\end{equation}
+
+For the key input, we consider a set of $M$ text-derived feature vectors $\{\mathbf{v}_m\}_{m=1}^M$, $\mathbf{v}_m \in \mathbb{R}^{d_{\mathrm{model}}}$, which are projected through the caption projection MLP $\phi_{\mathrm{cap}}$ and then through the key matrix:
+\begin{equation}
+    K_h^{(l)} = V \, W_{K,h}^{(l)} \in \mathbb{R}^{M \times d_h},
+\end{equation}
+where $V = [\mathbf{v}_1, \dots, \mathbf{v}_M]^\top$. The \emph{cross-attention inner-product map} for head $h$ at layer $l$ is the matrix
+\begin{equation}
+    \Phi_h^{(l)} = Q_h^{(l)} \, K_h^{(l)\top} \in \mathbb{R}^{S^2 \times M},
+    \label{eq:inner-product-map}
+\end{equation}
+whose $(s, m)$-th entry gives the (pre-softmax) attention logit between spatial position $s$ and text feature $m$. For each feature vector $m$, the column $\boldsymbol{\phi}_m = \Phi_h^{(l)}[:,m]$ can be reshaped into an $S \times S$ spatial map, which we denote $\Phi_m \in \mathbb{R}^{S \times S}$.
+
+\paragraph{Choice of text feature vectors.}
+The feature vectors $\{\mathbf{v}_m\}$ entering the key projection can be chosen in two ways, depending on the text encoder:
+
+\begin{itemize}
+    \item \textbf{Direct word embeddings.} For non-contextual encoders (e.g., random embeddings with positional encoding), we directly use the encoder output for individual spatial-relation words (``above'', ``below'', ``left'', ``right'', etc.) as the feature vectors, after projection through $\phi_{\mathrm{cap}}$.
+
+    \item \textbf{Variance-partitioned effect vectors.} For contextual encoders (e.g., T5), the embedding of a spatial word depends on the surrounding prompt context. We therefore first extract the spatial-relationship effect vectors $\hat{\boldsymbol{\beta}}^{(\mathrm{rel})}_\ell$ from the variance partition procedure (Section~\ref{method:variance_partitioning}). Specifically, we collect the T5 contextual embeddings at the object token positions across all prompts in a balanced design, project them through $\phi_{\mathrm{cap}}$, and apply variance partitioning with spatial relationship as one of the factors. The resulting $M = L_{\mathrm{rel}}$ effect vectors isolate the spatial-relationship component from confounds such as shape identity and color, yielding cleaner directional features.
+\end{itemize}
+
+\paragraph{Ramp template alignment.}
+Each spatial relationship $m$ has an associated canonical direction vector $\mathbf{d}_m \in \mathbb{R}^2$:
+\begin{equation}
+    \mathbf{d}_{\text{above}} = \begin{pmatrix} 0 \\ -1 \end{pmatrix}, \quad
+    \mathbf{d}_{\text{below}} = \begin{pmatrix} 0 \\ 1 \end{pmatrix}, \quad
+    \mathbf{d}_{\text{left}} = \begin{pmatrix} -1 \\ 0 \end{pmatrix}, \quad
+    \mathbf{d}_{\text{right}} = \begin{pmatrix} 1 \\ 0 \end{pmatrix},
+\end{equation}
+and analogously for the four diagonal directions ($\mathbf{d}_{\text{upper\_left}} = (-1, -1)^\top / \sqrt{2}$, etc.).
+
+For direction $\mathbf{d}_m$, we construct a \emph{ramp template} $T_m \in \mathbb{R}^{S \times S}$ on a coordinate grid $\{(x_j, y_k)\}$ with $x_j, y_k \in [-1, 1]$:
+\begin{equation}
+    T_m(j,k) = d_{m,x} \cdot x_j + d_{m,y} \cdot y_k,
+\end{equation}
+where $\mathbf{d}_m = (d_{m,x},\, d_{m,y})^\top$ is the unit direction vector. This template is then mean-centered:
+\begin{equation}
+    \bar{T}_m = T_m - \operatorname{mean}(T_m).
+\end{equation}
+
+Given the spatial attention map $\Phi_m \in \mathbb{R}^{S \times S}$ from Eq.~\eqref{eq:inner-product-map}, also mean-centered as $\bar{\Phi}_m = \Phi_m - \operatorname{mean}(\Phi_m)$, we compute three alignment metrics:
+
+\begin{enumerate}
+    \item \textbf{Ramp cosine similarity} (scale-free alignment):
+    \begin{equation}
+        \rho_m^{(l,h)} = \frac{\langle \bar{\Phi}_m,\, \bar{T}_m \rangle_F}{\lVert \bar{\Phi}_m \rVert_F \cdot \lVert \bar{T}_m \rVert_F},
+        \label{eq:ramp-cosine}
+    \end{equation}
+    where $\langle \cdot, \cdot \rangle_F$ denotes the Frobenius inner product. This measures how well the attention map's spatial pattern correlates with the expected linear gradient, independent of scale. Values near $+1$ indicate strong alignment; near $-1$ indicate anti-alignment.
+
+    \item \textbf{Ramp projection} (signed magnitude):
+    \begin{equation}
+        \pi_m^{(l,h)} = \frac{\langle \bar{\Phi}_m,\, \bar{T}_m \rangle_F}{\lVert \bar{T}_m \rVert_F},
+    \end{equation}
+    which captures both the alignment direction and the scale of the attention logits.
+
+    \item \textbf{Map energy}:
+    \begin{equation}
+        E_m^{(l,h)} = \lVert \bar{\Phi}_m \rVert_F,
+    \end{equation}
+    which quantifies the overall magnitude of spatial variation in the attention logits (irrespective of direction).
+\end{enumerate}
+
+\paragraph{Head scoring and ranking.}
+For each head $(l, h)$, we average the ramp cosine similarity across all $M$ spatial-relationship directions:
+\begin{equation}
+    \bar{\rho}^{(l,h)} = \frac{1}{M} \sum_{m=1}^{M} \rho_m^{(l,h)}.
+    \label{eq:head-score}
+\end{equation}
+This yields a score matrix $\bar{\rho} \in \mathbb{R}^{L \times H}$ summarizing each head's average spatial alignment. Heads with high $\bar{\rho}$ consistently produce attention patterns that spatially grade in the direction expected by the corresponding text feature---indicating that their learned $W_Q$--$W_K$ geometry implements directional spatial positioning. Analogous summary matrices are computed for the projection $\bar{\pi}^{(l,h)}$ and energy $\bar{E}^{(l,h)}$.
+
+\paragraph{Interpretation.}
+This procedure can be understood as probing the \emph{static} geometry of each cross-attention head: how the fixed positional structure in the queries interacts with semantically meaningful directions in the keys. A head with high ramp alignment has learned key and query projections such that, when a spatial-relationship token (or its factored effect direction) appears in the text conditioning, the resulting attention logits form a monotonic spatial gradient that concentrates attention on the image region indicated by the relationship. Because the analysis operates entirely on model weights and fixed positional embeddings, it is orders of magnitude faster than empirical screening methods that require generating and evaluating images across many prompts.
+
+\paragraph{Algorithm summary.}
+The full procedure is summarized in the pseudocode below.
+
+\begin{RoundedListing}
+def screen_spatial_heads(transformer, text_encoder, tokenizer,
+                         direction_map, pos_embed, caption_proj):
+    """Screen all cross-attention heads for spatial-relationship alignment.
+    Returns three score matrices, each of shape (L, H):
+      rho_bar  -- mean ramp cosine  (scale-free directional alignment)
+      pi_bar   -- mean ramp projection (signed magnitude of alignment)
+      E_bar    -- mean map energy   (overall spatial variation strength)"""
+
+    # --- Stage 1: Obtain text feature vectors V (M x d_model) ---
+    if text_encoder.is_contextual:  # e.g. T5
+        # Encode balanced prompt set; extract embeddings at object token positions
+        word_vecs = extract_object_token_embeddings(
+            text_encoder, tokenizer, all_prompts)   # (n_prompts, d_encoder)
+        word_vecs_proj = caption_proj(word_vecs)     # (n_prompts, d_model)
+        # Variance partition (Sec. 2.1): isolate spatial-relation effect vectors
+        _, _, effect_vecs, levels, _ = variance_partition_with_effects(
+            word_vecs_proj,
+            factors={"spatial_relationship": rel_labels,
+                     "shape": shape_labels, ...})
+        V = effect_vecs["spatial_relationship"]      # (M, d_model)
+    else:
+        # Non-contextual encoder: encode relation words directly
+        word_embeds = text_encoder(["above","below","left","right",...])
+        V = caption_proj(word_embeds)                # (M, d_model)
+
+    # --- Stage 2: Precompute ramp templates for each direction ---
+    # direction_map: {"above": (0,-1), "below": (0,1), "left": (-1,0), ...}
+    xs = linspace(-1, 1, S)  # S = image_size / patch_size
+    ys = linspace(-1, 1, S)
+    X_grid, Y_grid = meshgrid(xs, ys)
+    templates = {}
+    for rel_name, (dx, dy) in direction_map.items():
+        T = dx * X_grid + dy * Y_grid   # (S, S) linear ramp
+        templates[rel_name] = T - T.mean()  # mean-center
+
+    # --- Stage 3: Screen all (layer, head) pairs ---
+    rho_bar = zeros(L, H)   # cosine alignment
+    pi_bar  = zeros(L, H)   # signed projection
+    E_bar   = zeros(L, H)   # map energy
+    for layer_idx in range(L):
+        block = transformer.blocks[layer_idx]
+        for head_idx in range(H):
+            h_slice = slice(head_idx * d_h, (head_idx + 1) * d_h)
+            # Project positional embeddings through this head's Q
+            Q_h = block.cross_attn.to_q(pos_embed)[:, h_slice]  # (S^2, d_h)
+            # Project text features through this head's K
+            K_h = block.cross_attn.to_k(V)[:, h_slice]          # (M, d_h)
+            # Cross-attention logit map: how each position attends to each feature
+            Phi = Q_h @ K_h.T                                   # (S^2, M)
+
+            # Score each direction by ramp alignment
+            cosines, projections, energies = [], [], []
+            for m, rel_name in enumerate(direction_map):
+                attn_map = Phi[:, m].reshape(S, S)      # spatial attention map
+                attn_centered = attn_map - attn_map.mean()
+                T_bar = templates[rel_name]
+                # Projection: signed magnitude of alignment with ramp
+                proj = dot(attn_centered, T_bar) / norm(T_bar)
+                # Energy: overall strength of spatial variation
+                energy = norm(attn_centered)
+                # Cosine: does this head's map grade in the right direction?
+                rho = proj / energy
+                cosines.append(rho)
+                projections.append(proj)
+                energies.append(energy)
+
+            rho_bar[layer_idx, head_idx] = mean(cosines)
+            pi_bar[layer_idx, head_idx]  = mean(projections)
+            E_bar[layer_idx, head_idx]   = mean(energies)
+
+    return rho_bar, pi_bar, E_bar  # each (L, H)
+\end{RoundedListing}

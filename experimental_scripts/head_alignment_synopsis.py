@@ -381,8 +381,8 @@ def run_T5(args):
         print(f"Saved alignment scores to {csv_path}")
         plot_synopsis(align_df, args.model_run_name, args.figdir, save_suffix=suffix,
                       clims=[(-1, 1), (-100, 100), (0, 120)],
-                      fmts=[".2f", ".0f", ".0f"],
-                      figsize_per_metric=(7, 7))
+                      fmts=[".1f", ".0f", ".0f"],
+                      figsize_per_metric=(5, 4))
 
 
 def run_CLIP(args):
